@@ -9,8 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  permission_handler: ^11.0.1
   ffi: ^2.1.0
+  # permission_handler: ^11.0.1  # ŞİMDİLİK KALDIR
+  file_picker: ^6.1.1    # ✅ EKLENDİ
+  path_provider: ^2.1.1  # ✅ EKLENDİ
 
 dev_dependencies:
   flutter_test:
