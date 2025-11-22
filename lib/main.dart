@@ -53,9 +53,10 @@ class _PDFListScreenState extends State<PDFListScreen> {
       );
 
       if (result != null && result.files.single.path != null) {
-        setState(() => _isLoading = true);
-        
         final filePath = result.files.single.path!;
+        
+        setState(() => _isLoading = true);
+
         final document = await _pdfService.openPDF(filePath);
         
         setState(() {
@@ -65,7 +66,7 @@ class _PDFListScreenState extends State<PDFListScreen> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      _showError('PDF açılamadı: $e');
+      _showError('PDF açılamadı: ${e.toString()}');
     }
   }
 
@@ -151,34 +152,6 @@ class PDFViewScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(document.title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('PDF Bilgisi'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Başlık: ${document.title}'),
-                      Text('Sayfa: ${document.pageCount}'),
-                      Text('Yol: ${document.filePath}'),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Tamam'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: Center(
         child: Column(
@@ -196,6 +169,11 @@ class PDFViewScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 20),
+            Text(
+              document.filePath.split('/').last,
+              style: const TextStyle(fontSize: 14, color: Colors.blue),
+            ),
+            const SizedBox(height: 30),
             Container(
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.all(20),
@@ -213,7 +191,6 @@ class PDFViewScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 16, color: Colors.green),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 5),
                   Text(
                     'MuPDF motoru çalışıyor',
                     style: TextStyle(fontSize: 12, color: Colors.green),
@@ -283,7 +260,8 @@ class PDFNativeService {
       final documentPtr = _openDocument(context, pathPtr);
       
       if (documentPtr == 0) {
-        throw Exception('PDF açılamadı: $filePath');
+        malloc.free(pathPtr);
+        throw Exception('PDF açılamadı');
       }
       
       // Bilgileri al
