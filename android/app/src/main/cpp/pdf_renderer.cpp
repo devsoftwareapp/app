@@ -6,6 +6,12 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
+// Struct'ı GLOBAL TANIMLA
+struct SimpleDoc {
+    int pages;
+    const char* name;
+};
+
 extern "C" {
 
 JNIEXPORT jlong JNICALL
@@ -29,11 +35,6 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument(JNIEnv* env, 
     std::string pathStr(convertedPath);
     LOGI("Path: %s", pathStr.c_str());
     
-    struct SimpleDoc {
-        int pages;
-        const char* name;
-    };
-    
     SimpleDoc* doc = new SimpleDoc();
     doc->pages = 15;
     doc->name = "PDF Document";
@@ -47,14 +48,14 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument(JNIEnv* env, 
 JNIEXPORT jint JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getPageCount(JNIEnv* env, jobject thiz, jlong context, jlong document) {
     if (document == 0) return 0;
-    struct SimpleDoc* doc = (struct SimpleDoc*) document;
+    SimpleDoc* doc = (SimpleDoc*) document;
     return doc->pages;
 }
 
 JNIEXPORT jstring JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getDocumentTitle(JNIEnv* env, jobject thiz, jlong context, jlong document) {
     if (document == 0) return env->NewStringUTF("Unknown Document");
-    struct SimpleDoc* doc = (struct SimpleDoc*) document;
+    SimpleDoc* doc = (SimpleDoc*) document;
     return env->NewStringUTF(doc->name);
 }
 
@@ -66,7 +67,7 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getFilePath(JNIEnv* env, j
 JNIEXPORT void JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_closeDocument(JNIEnv* env, jobject thiz, jlong context, jlong document) {
     if (document != 0) {
-        struct SimpleDoc* doc = (struct SimpleDoc*) document;
+        SimpleDoc* doc = (SimpleDoc*) document;
         delete doc;
     }
 }
