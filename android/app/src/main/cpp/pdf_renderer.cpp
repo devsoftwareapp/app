@@ -6,12 +6,6 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-struct PDFDocument {
-    int pageCount;
-    std::string title;
-    std::string filePath;
-};
-
 extern "C" {
 
 JNIEXPORT jlong JNICALL
@@ -24,56 +18,63 @@ JNIEXPORT jlong JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument(JNIEnv* env, jobject thiz, jlong context, jstring filePath) {
     LOGI("📄 Opening PDF...");
     
-    if (filePath == nullptr) {
-        LOGE("❌ File path is NULL");
+    // GÜVENLİ STRING CONVERSION
+    jboolean isCopy;
+    const char* convertedPath = env->GetStringUTFChars(filePath, &isCopy);
+    
+    if (convertedPath == nullptr) {
+        LOGE("❌ String conversion failed");
         return 0;
     }
     
-    const char* path = env->GetStringUTFChars(filePath, nullptr);
-    if (path == nullptr) {
-        LOGE("❌ Failed to get string chars");
-        return 0;
-    }
+    std::string pathStr(convertedPath);
+    LOGI("📄 Path: %s", pathStr.c_str());
     
-    LOGI("📄 Path: %s", path);
+    // Basit bir struct oluştur (test için)
+    struct SimpleDoc {
+        int pages;
+        const char* name;
+    };
     
-    PDFDocument* doc = new PDFDocument();
-    doc->pageCount = 15;
-    doc->title = "Loaded PDF";
-    doc->filePath = std::string(path);
+    SimpleDoc* doc = new SimpleDoc();
+    doc->pages = 18; // Test değeri
+    doc->name = "PDF Document";
     
-    LOGI("✅ PDF opened - Pages: %d", doc->pageCount);
+    LOGI("✅ PDF opened successfully - Pages: %d", doc->pages);
     
-    env->ReleaseStringUTFChars(filePath, path);
+    // String'i serbest bırak
+    env->ReleaseStringUTFChars(filePath, convertedPath);
+    
     return (jlong) doc;
 }
 
 JNIEXPORT jint JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getPageCount(JNIEnv* env, jobject thiz, jlong context, jlong document) {
     if (document == 0) return 0;
-    PDFDocument* doc = (PDFDocument*) document;
-    return doc->pageCount;
+    struct SimpleDoc* doc = (struct SimpleDoc*) document;
+    LOGI("📊 Returning page count: %d", doc->pages);
+    return doc->pages;
 }
 
 JNIEXPORT jstring JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getDocumentTitle(JNIEnv* env, jobject thiz, jlong context, jlong document) {
     if (document == 0) return env->NewStringUTF("Unknown Document");
-    PDFDocument* doc = (PDFDocument*) document;
-    return env->NewStringUTF(doc->title.c_str());
+    struct SimpleDoc* doc = (struct SimpleDoc*) document;
+    LOGI("📝 Returning title: %s", doc->name);
+    return env->NewStringUTF(doc->name);
 }
 
 JNIEXPORT jstring JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getFilePath(JNIEnv* env, jobject thiz, jlong context, jlong document) {
-    if (document == 0) return env->NewStringUTF("");
-    PDFDocument* doc = (PDFDocument*) document;
-    return env->NewStringUTF(doc->filePath.c_str());
+    // Basit test için
+    return env->NewStringUTF("/test/path/document.pdf");
 }
 
 JNIEXPORT void JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_closeDocument(JNIEnv* env, jobject thiz, jlong context, jlong document) {
     if (document != 0) {
-        PDFDocument* doc = (PDFDocument*) document;
-        LOGI("🧹 Closing document");
+        struct SimpleDoc* doc = (struct SimpleDoc*) document;
+        LOGI("🧹 Closing document: %s", doc->name);
         delete doc;
     }
 }
