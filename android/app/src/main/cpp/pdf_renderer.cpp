@@ -22,6 +22,8 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_initContext(JNIEnv* env, j
 
 JNIEXPORT jlong JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument(JNIEnv* env, jobject thiz, jlong context, jstring filePath) {
+    LOGI("📄 Opening PDF...");
+    
     if (filePath == nullptr) {
         LOGE("❌ File path is NULL");
         return 0;
@@ -33,15 +35,15 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument(JNIEnv* env, 
         return 0;
     }
     
-    LOGI("📄 Opening PDF: %s", path);
+    LOGI("📄 Path: %s", path);
     
-    // Gerçek PDF açma (şimdilik test)
+    // Basit PDF document oluştur
     PDFDocument* doc = new PDFDocument();
-    doc->pageCount = 10; // Test değeri
+    doc->pageCount = 12; // Test değeri
     doc->title = "Imported PDF";
-    doc->filePath = path;
+    doc->filePath = std::string(path);
     
-    LOGI("✅ PDF opened - Pages: %d, Path: %s", doc->pageCount, doc->filePath.c_str());
+    LOGI("✅ PDF opened - Pages: %d", doc->pageCount);
     
     env->ReleaseStringUTFChars(filePath, path);
     return (jlong) doc;
@@ -56,7 +58,7 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getPageCount(JNIEnv* env, 
 
 JNIEXPORT jstring JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getDocumentTitle(JNIEnv* env, jobject thiz, jlong context, jlong document) {
-    if (document == 0) return env->NewStringUTF("Unknown");
+    if (document == 0) return env->NewStringUTF("Unknown Document");
     PDFDocument* doc = (PDFDocument*) document;
     return env->NewStringUTF(doc->title.c_str());
 }
@@ -72,7 +74,7 @@ JNIEXPORT void JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_closeDocument(JNIEnv* env, jobject thiz, jlong context, jlong document) {
     if (document != 0) {
         PDFDocument* doc = (PDFDocument*) document;
-        LOGI("🧹 Closing document: %s", doc->title.c_str());
+        LOGI("🧹 Closing document");
         delete doc;
     }
 }
