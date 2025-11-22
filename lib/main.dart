@@ -162,44 +162,29 @@ class PDFViewerScreen extends StatefulWidget {
 
 class _PDFViewerScreenState extends State<PDFViewerScreen> {
   String _generatePDFViewerHTML() {
-    // Tüm PDF.js kodlarını tek HTML'de birleştir
-    return '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PDF Viewer</title>
-  <style>
-    ${viewer_css.viewerCss}
-  </style>
-</head>
-<body>
-  <div id="viewerContainer">
-    <div id="viewer" class="pdfViewer"></div>
-  </div>
-  
-  <script>
-    // PDF.js Core
-    ${pdf_js.pdfMjs}
+    // viewer.html.dart içeriğini al ve PDF path'ini inject et
+    String html = viewer_html.viewerHtml;
     
-    // PDF.js Worker
-    ${pdf_worker_js.pdfWorkerMjs}
+    // PDF path'ini HTML'e ekle
+    final fileUri = "file://${widget.pdfPath}";
+    html = html.replaceFirst(
+      '<script src="../build/pdf.mjs" type="module"></script>',
+      '<script src="../build/pdf.mjs" type="module"></script>\n' +
+      '<script>\n' +
+      '  window.PDF_URL = "$fileUri";\n' +
+      '  window.addEventListener("load", function() {\n' +
+      '    if (window.PDF_URL) {\n' +
+      '      pdfjsLib.getDocument(window.PDF_URL).promise.then(function(pdf) {\n' +
+      '        window.pdfViewer.setDocument(pdf);\n' +
+      '      }).catch(function(error) {\n' +
+      '        console.error("PDF loading error:", error);\n' +
+      '      });\n' +
+      '    }\n' +
+      '  });\n' +
+      '</script>'
+    );
     
-    // PDF.js Viewer
-    ${viewer_js.viewerMjs}
-    
-    // PDF'yi yükle
-    window.addEventListener('load', function() {
-      const pdfUrl = "${widget.pdfPath}";
-      pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
-        window.pdfViewer.setDocument(pdf);
-      });
-    });
-  </script>
-</body>
-</html>
-''';
+    return html;
   }
 
   @override
@@ -214,12 +199,16 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
           data: _generatePDFViewerHTML(),
           mimeType: "text/html",
           encoding: "utf-8",
+          baseUrl: "file:///android_asset/flutter_assets/assets/web/",
         ),
         onWebViewCreated: (controller) {
           print("PDF Viewer opened: ${widget.pdfPath}");
         },
         onLoadError: (controller, url, code, message) {
           print("PDF Load Error: $message");
+        },
+        onConsoleMessage: (controller, consoleMessage) {
+          print("WebView Console: ${consoleMessage.message}");
         },
       ),
     );
