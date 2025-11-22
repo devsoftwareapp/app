@@ -108,24 +108,24 @@ class PDFNativeService {
     return _nativeLib!;
   }
 
-  // C++ fonksiyonları
-  final int Function() _initContext = 
+  // C++ fonksiyonları - LATE FINAL
+  late final int Function() _initContext = 
       _lib.lookupFunction<Int64 Function(), int Function()>(
           'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_initContext');
   
-  final int Function(int, Pointer<Utf8>) _openDocument = 
+  late final int Function(int, Pointer<Utf8>) _openDocument = 
       _lib.lookupFunction<Int64 Function(Int64, Pointer<Utf8>), int Function(int, Pointer<Utf8>)>(
           'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument');
   
-  final int Function(int, int) _getPageCount = 
+  late final int Function(int, int) _getPageCount = 
       _lib.lookupFunction<Int32 Function(Int64, Int64), int Function(int, int)>(
           'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getPageCount');
   
-  final Pointer<Utf8> Function(int, int) _getDocumentTitle = 
+  late final Pointer<Utf8> Function(int, int) _getDocumentTitle = 
       _lib.lookupFunction<Pointer<Utf8> Function(Int64, Int64), Pointer<Utf8> Function(int, int)>(
           'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getDocumentTitle');
 
-  final void Function(int, int) _closeDocument = 
+  late final void Function(int, int) _closeDocument = 
       _lib.lookupFunction<Void Function(Int64, Int64), void Function(int, int)>(
           'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_closeDocument');
 
