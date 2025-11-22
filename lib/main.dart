@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'dart:convert';
 
-// Import PDF.js Dart wrappers
-import 'package:app/web/viewer.html.dart' as viewer_html;
-import 'package:app/web/viewer.mjs.dart' as viewer_js;
-import 'package:app/web/viewer.css.dart' as viewer_css;
-import 'package:app/build/pdf.mjs.dart' as pdf_js;
-import 'package:app/build/pdf.worker.mjs.dart' as pdf_worker_js;
+// Import PDF.js Dart wrappers - RELATIVE IMPORT
+import '../web/viewer.html.dart' as viewer_html;
+import '../web/viewer.mjs.dart' as viewer_js;
+import '../web/viewer.css.dart' as viewer_css;
+import '../build/pdf.mjs.dart' as pdf_js;
+import '../build/pdf.worker.mjs.dart' as pdf_worker_js;
 
 void main() => runApp(const PDFReaderApp());
 
@@ -151,46 +151,75 @@ class _PDFListScreenState extends State<PDFListScreen> {
   }
 }
 
-class PDFViewerScreen extends StatelessWidget {
+class PDFViewerScreen extends StatefulWidget {
   final String pdfPath;
 
   const PDFViewerScreen({super.key, required this.pdfPath});
 
+  @override
+  State<PDFViewerScreen> createState() => _PDFViewerScreenState();
+}
+
+class _PDFViewerScreenState extends State<PDFViewerScreen> {
   String _generatePDFViewerHTML() {
-    // HTML template oluştur
-    String html = viewer_html.viewerHtml;
+    // Tüm PDF.js kodlarını tek HTML'de birleştir
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF Viewer</title>
+  <style>
+    ${viewer_css.viewerCss}
+  </style>
+</head>
+<body>
+  <div id="viewerContainer">
+    <div id="viewer" class="pdfViewer"></div>
+  </div>
+  
+  <script>
+    // PDF.js Core
+    ${pdf_js.pdfMjs}
     
-    // PDF yolunu HTML'e embed et
-    html = html.replaceAll(
-      '<!-- PDF_URL_PLACEHOLDER -->',
-      '''
-      <script>
-        // PDF dosyasını yükle
-        window.pdfUrl = "$pdfPath";
-        
-        // PDF.js'i başlat
-        pdfjsLib.getDocument(window.pdfUrl).promise.then(function(pdf) {
-          window.pdfViewer.setDocument(pdf);
-        });
-      </script>
-      '''
-    );
+    // PDF.js Worker
+    ${pdf_worker_js.pdfWorkerMjs}
     
-    return html;
+    // PDF.js Viewer
+    ${viewer_js.viewerMjs}
+    
+    // PDF'yi yükle
+    window.addEventListener('load', function() {
+      const pdfUrl = "${widget.pdfPath}";
+      pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
+        window.pdfViewer.setDocument(pdf);
+      });
+    });
+  </script>
+</body>
+</html>
+''';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('PDF Viewer - ${pdfPath.split('/').last}'),
+        title: Text('PDF - ${widget.pdfPath.split('/').last}'),
         backgroundColor: Colors.red,
       ),
-      body: WebView(
-        initialUrl: 'data:text/html;charset=utf-8,${Uri.encodeComponent(_generatePDFViewerHTML())}',
-        javascriptMode: JavascriptMode.unrestricted,
-        onWebViewCreated: (WebViewController webViewController) {
-          print('PDF Viewer opened: $pdfPath');
+      body: InAppWebView(
+        initialData: InAppWebViewInitialData(
+          data: _generatePDFViewerHTML(),
+          mimeType: "text/html",
+          encoding: "utf-8",
+        ),
+        onWebViewCreated: (controller) {
+          print("PDF Viewer opened: ${widget.pdfPath}");
+        },
+        onLoadError: (controller, url, code, message) {
+          print("PDF Load Error: $message");
         },
       ),
     );
