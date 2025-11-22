@@ -1,7 +1,13 @@
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
 android {
     namespace = "com.devsoftware.pdf_reader_manager"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "25.1.8937393"  // 🎯 SPESİFİK NDK VERSİYONU EKLE
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
