@@ -11,6 +11,7 @@ class PDFRenderer {
     external fun openDocument(context: Long, filePath: String): Long
     external fun getPageCount(context: Long, document: Long): Int
     external fun getDocumentTitle(context: Long, document: Long): String
+    external fun getFilePath(context: Long, document: Long): String
     external fun closeDocument(context: Long, document: Long)
     external fun destroyContext(context: Long)
 }
