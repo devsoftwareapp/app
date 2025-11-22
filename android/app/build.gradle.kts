@@ -25,37 +25,27 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // CRITICAL: CMake için ekle - DÜZELTİLDİ
+        // CRITICAL: CMake için ekle
         externalNativeBuild {
             cmake {
-                cppFlags("-std=c++17", "-frtti", "-fexceptions")
-                arguments("-DANDROID_STL=c++_shared")
+                cppFlags += "-std=c++17"
+                arguments += "-DANDROID_STL=c++_shared"
             }
         }
 
-        // CRITICAL: Native library için - DÜZELTİLDİ
+        // CRITICAL: Native library için
         ndk {
-            abiFilters.add("arm64-v8a")
-            abiFilters.add("armeabi-v7a") 
-            abiFilters.add("x86_64")
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64"))
         }
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-        debug {
-            isMinifyEnabled = false
         }
     }
 
-    // CRITICAL: CMake build'ı aktif et - DÜZELTİLDİ
+    // CRITICAL: CMake build'ı aktif et
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -63,33 +53,19 @@ android {
         }
     }
 
-    // CRITICAL: Native library paketleme - DÜZELTİLDİ
+    // CRITICAL: Native library paketleme
     packagingOptions {
         jniLibs {
             useLegacyPackaging = true
         }
         resources {
-            excludes += setOf(
-                "META-INF/AL2.0",
-                "META-INF/LGPL2.1",
-                "**/libpdf_renderer.so"
-            )
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
-        // ÖNEMLİ: STL kütüphanelerini paketle
-        pickFirsts += setOf(
-            "lib/arm64-v8a/libc++_shared.so",
-            "lib/armeabi-v7a/libc++_shared.so", 
-            "lib/x86_64/libc++_shared.so"
-        )
     }
 
     buildFeatures {
         prefab = true
-        buildConfig = true
     }
-
-    // ÖNEMLİ: Build klasörünü temizle
-    buildDir = file("build")
 }
 
 flutter {
@@ -98,5 +74,4 @@ flutter {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
 }
