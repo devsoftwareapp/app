@@ -16,25 +16,11 @@ Java_com_devsoftware_pdf_reader_manager_PDFRenderer_initContext(JNIEnv *env, job
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_devsoftware_pdf_reader_manager_PDFRenderer_openDocument(JNIEnv *env, jobject thiz, 
                                                        jlong ctx_ptr, jstring path) {
-    LOGI("📄 OPEN_DOCUMENT called");
-    
-    // NULL kontrolü ekle
-    if (path == NULL) {
-        LOGE("❌ Path is NULL");
-        return 0;
-    }
-    
-    const char *c_path = env->GetStringUTFChars(path, NULL);
-    if (c_path == NULL) {
-        LOGE("❌ Failed to get UTF chars from path");
-        return 0;
-    }
-    
-    LOGI("📄 Path: %s", c_path);
+    LOGI("📄 OPEN_DOCUMENT called - STRING OPERATIONS REMOVED");
     LOGI("📄 Context pointer: %ld", ctx_ptr);
     
-    // Hemen serbest bırak
-    env->ReleaseStringUTFChars(path, c_path);
+    // JNI string işlemleri KALDIRILDI - sadece log
+    LOGI("📄 Path parameter received (not processing)");
     
     // Simulate document opening
     if (ctx_ptr == 123456789) {
