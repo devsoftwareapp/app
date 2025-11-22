@@ -19,12 +19,11 @@ class PDFRenderer {
     // Basit test fonksiyonları
     external fun simpleAdd(a: Int, b: Int): Int
     external fun getVersion(): String
-    external fun calculate(operation: String): String
 
-    // PDF fonksiyonları
-    external fun initContext(): Long
-    external fun openDocument(context: Long, path: String): Long
-    external fun getPageCount(context: Long, document: Long): Int
-    external fun closeDocument(context: Long, document: Long)
-    external fun destroyContext(context: Long)
+    // PDFium fonksiyonları - YENİ
+    external fun initPDFium(): Boolean
+    external fun openDocument(filePath: String): Long
+    external fun getPageCount(documentPtr: Long): Int
+    external fun closeDocument(documentPtr: Long)
+    external fun destroyPDFium()
 }
