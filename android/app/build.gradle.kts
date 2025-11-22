@@ -25,12 +25,17 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // CMake için ekle
+        // CRITICAL: CMake için ekle
         externalNativeBuild {
             cmake {
                 cppFlags += "-std=c++17"
                 arguments += "-DANDROID_STL=c++_shared"
             }
+        }
+
+        // CRITICAL: Native library için
+        ndk {
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64"))
         }
     }
 
@@ -40,7 +45,7 @@ android {
         }
     }
 
-    // CMake BUILD EKLE
+    // CRITICAL: CMake build'ı aktif et
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -48,7 +53,7 @@ android {
         }
     }
 
-    // Native library paketleme
+    // CRITICAL: Native library paketleme
     packagingOptions {
         jniLibs {
             useLegacyPackaging = true
@@ -57,6 +62,10 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    buildFeatures {
+        prefab = true
+    }
 }
 
 flutter {
@@ -64,6 +73,5 @@ flutter {
 }
 
 dependencies {
-    // Native library'ler için
     implementation("androidx.core:core-ktx:1.12.0")
 }
