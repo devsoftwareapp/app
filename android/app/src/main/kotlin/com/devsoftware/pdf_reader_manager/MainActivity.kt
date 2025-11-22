@@ -47,36 +47,45 @@ class MainActivity: FlutterActivity() {
             val pdfRenderer = PDFRenderer()
             Log.d(TAG, "✅ PDFRenderer instance created successfully")
             
-            // Test initialization method
-            Log.d(TAG, "🔧 Testing initContext() method...")
-            val contextPtr = pdfRenderer.initContext()
-            Log.d(TAG, "✅ initContext() successful - returned: $contextPtr")
+            // Test initialization method - YENİ FONKSİYONLARI KULLAN
+            Log.d(TAG, "🔧 Testing initPDFium() method...")
+            val initSuccess = pdfRenderer.initPDFium()
+            Log.d(TAG, "✅ initPDFium() successful - returned: $initSuccess")
             
-            if (contextPtr != 0L) {
-                Log.d(TAG, "🎯 Native context initialized successfully")
+            if (initSuccess) {
+                Log.d(TAG, "🎯 PDFium initialized successfully")
                 
-                // Test document opening with dummy path
+                // Test document opening with dummy path - YENİ FONKSİYON
                 Log.d(TAG, "📄 Testing openDocument() method...")
-                val docPtr = pdfRenderer.openDocument(contextPtr, "/test/dummy.pdf")
+                val docPtr = pdfRenderer.openDocument("/test/dummy.pdf")
                 Log.d(TAG, "✅ openDocument() successful - returned: $docPtr")
                 
                 if (docPtr != 0L) {
-                    // Test page count
+                    // Test page count - YENİ FONKSİYON
                     Log.d(TAG, "📊 Testing getPageCount() method...")
-                    val pageCount = pdfRenderer.getPageCount(contextPtr, docPtr)
+                    val pageCount = pdfRenderer.getPageCount(docPtr) // SADECE 1 PARAMETRE
                     Log.d(TAG, "✅ getPageCount() successful - returned: $pageCount")
                     
-                    // Test cleanup
+                    // Test cleanup - YENİ FONKSİYON
                     Log.d(TAG, "🧹 Testing closeDocument() method...")
-                    pdfRenderer.closeDocument(contextPtr, docPtr)
+                    pdfRenderer.closeDocument(docPtr) // SADECE 1 PARAMETRE
                     Log.d(TAG, "✅ closeDocument() successful")
                 }
                 
-                // Test context destruction
-                Log.d(TAG, "🧹 Testing destroyContext() method...")
-                pdfRenderer.destroyContext(contextPtr)
-                Log.d(TAG, "✅ destroyContext() successful")
+                // Test PDFium destruction - YENİ FONKSİYON
+                Log.d(TAG, "🧹 Testing destroyPDFium() method...")
+                pdfRenderer.destroyPDFium()
+                Log.d(TAG, "✅ destroyPDFium() successful")
             }
+            
+            // Basit test fonksiyonlarını da test et
+            Log.d(TAG, "🧮 Testing simpleAdd() method...")
+            val addResult = pdfRenderer.simpleAdd(2, 3)
+            Log.d(TAG, "✅ simpleAdd(2, 3) = $addResult")
+            
+            Log.d(TAG, "📝 Testing getVersion() method...")
+            val version = pdfRenderer.getVersion()
+            Log.d(TAG, "✅ getVersion() = $version")
             
             Log.d(TAG, "🎉 ALL NATIVE METHODS TESTED SUCCESSFULLY!")
             
