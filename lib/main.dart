@@ -4,13 +4,14 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'dart:convert';
 
-// Import PDF.js Dart wrappers - RELATIVE IMPORT
-import '../web/viewer.html.dart' as viewer_html;
-import '../web/viewer.mjs.dart' as viewer_js;
-import '../web/viewer.css.dart' as viewer_css;
-import '../build/pdf.mjs.dart' as pdf_js;
-import '../build/pdf.worker.mjs.dart' as pdf_worker_js;
+// Import PDF.js Dart wrappers - CORRECT IMPORT PATHS
+import 'build/pdf.mjs.dart' as pdf_js;
+import 'build/pdf.worker.mjs.dart' as pdf_worker_js;
+import 'web/viewer.html.dart' as viewer_html;
+import 'web/viewer.mjs.dart' as viewer_js;
+import 'web/viewer.css.dart' as viewer_css;
 
+// ... geri kalan kod aynı
 void main() => runApp(const PDFReaderApp());
 
 class PDFReaderApp extends StatelessWidget {
