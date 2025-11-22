@@ -28,7 +28,7 @@ class PDFListScreen extends StatefulWidget {
 }
 
 class _PDFListScreenState extends State<PDFListScreen> {
-  final List<PDFDocument> _documents = [];
+  final List<FileDocument> _documents = [];
   final _pdfService = PDFNativeService();
   bool _isLoading = false;
 
@@ -54,10 +54,16 @@ class _PDFListScreenState extends State<PDFListScreen> {
 
       if (result != null && result.files.single.path != null) {
         final filePath = result.files.single.path!;
+        final fileName = result.files.single.name;
         
         setState(() => _isLoading = true);
 
-        final document = await _pdfService.openPDF(filePath);
+        // SADECE DOSYA BİLGİSİNİ EKLE, C++ ÇAĞIRMA!
+        final document = FileDocument(
+          title: fileName,
+          filePath: filePath,
+          pageCount: 0, // Henüz bilmiyoruz
+        );
         
         setState(() {
           _documents.add(document);
@@ -66,17 +72,27 @@ class _PDFListScreenState extends State<PDFListScreen> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      _showError('PDF açılamadı: ${e.toString()}');
+      _showError('PDF eklenemedi: ${e.toString()}');
     }
   }
 
-  void _openPDF(PDFDocument document) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PDFViewScreen(document: document),
-      ),
-    );
+  void _openPDF(FileDocument document) async {
+    // TIKLAYINCA C++ ÇAĞIR
+    setState(() => _isLoading = true);
+    
+    try {
+      final pdfDoc = await _pdfService.openPDF(document.filePath);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PDFViewScreen(document: pdfDoc),
+        ),
+      );
+    } catch (e) {
+      _showError('PDF açılamadı: ${e.toString()}');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _showError(String message) {
@@ -127,7 +143,7 @@ class _PDFListScreenState extends State<PDFListScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
                         title: Text(doc.title),
-                        subtitle: Text('${doc.pageCount} sayfa • ${doc.filePath.split('/').last}'),
+                        subtitle: Text('${doc.pageCount == 0 ? '?' : doc.pageCount} sayfa • ${doc.filePath.split('/').last}'),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () => _openPDF(doc),
                       ),
@@ -204,6 +220,18 @@ class PDFViewScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class FileDocument {
+  final String title;
+  final String filePath;
+  final int pageCount;
+
+  FileDocument({
+    required this.title,
+    required this.filePath,
+    required this.pageCount,
+  });
 }
 
 class PDFDocument {
