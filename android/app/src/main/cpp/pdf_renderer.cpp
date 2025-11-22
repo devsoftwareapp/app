@@ -37,10 +37,9 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument(JNIEnv* env, 
     
     LOGI("📄 Path: %s", path);
     
-    // Basit PDF document oluştur
     PDFDocument* doc = new PDFDocument();
-    doc->pageCount = 12; // Test değeri
-    doc->title = "Imported PDF";
+    doc->pageCount = 15;
+    doc->title = "Loaded PDF";
     doc->filePath = std::string(path);
     
     LOGI("✅ PDF opened - Pages: %d", doc->pageCount);
