@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'dart:convert';
+
+// Import PDF.js Dart wrappers
+import 'package:app/web/viewer.html.dart' as viewer_html;
+import 'package:app/web/viewer.mjs.dart' as viewer_js;
+import 'package:app/web/viewer.css.dart' as viewer_css;
+import 'package:app/build/pdf.mjs.dart' as pdf_js;
+import 'package:app/build/pdf.worker.mjs.dart' as pdf_worker_js;
 
 void main() => runApp(const PDFReaderApp());
 
@@ -28,7 +35,6 @@ class PDFListScreen extends StatefulWidget {
 
 class _PDFListScreenState extends State<PDFListScreen> {
   final List<FileDocument> _documents = [];
-  final _pdfService = PDFNativeService();
   bool _isLoading = false;
 
   @override
@@ -60,7 +66,6 @@ class _PDFListScreenState extends State<PDFListScreen> {
         final document = FileDocument(
           title: fileName,
           filePath: filePath,
-          pageCount: 0,
         );
         
         setState(() {
@@ -74,22 +79,13 @@ class _PDFListScreenState extends State<PDFListScreen> {
     }
   }
 
-  void _openPDF(FileDocument document) async {
-    setState(() => _isLoading = true);
-    
-    try {
-      final pdfDoc = await _pdfService.openPDF(document.filePath);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PDFViewScreen(document: pdfDoc),
-        ),
-      );
-    } catch (e) {
-      _showError('PDF açılamadı: ${e.toString()}');
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  void _openPDF(FileDocument document) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PDFViewerScreen(pdfPath: document.filePath),
+      ),
+    );
   }
 
   void _showError(String message) {
@@ -140,7 +136,7 @@ class _PDFListScreenState extends State<PDFListScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
                         title: Text(doc.title),
-                        subtitle: Text('${doc.pageCount == 0 ? '?' : doc.pageCount} sayfa • ${doc.filePath.split('/').last}'),
+                        subtitle: Text(doc.filePath.split('/').last),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () => _openPDF(doc),
                       ),
@@ -155,66 +151,47 @@ class _PDFListScreenState extends State<PDFListScreen> {
   }
 }
 
-class PDFViewScreen extends StatelessWidget {
-  final PDFDocument document;
+class PDFViewerScreen extends StatelessWidget {
+  final String pdfPath;
 
-  const PDFViewScreen({super.key, required this.document});
+  const PDFViewerScreen({super.key, required this.pdfPath});
+
+  String _generatePDFViewerHTML() {
+    // HTML template oluştur
+    String html = viewer_html.viewerHtml;
+    
+    // PDF yolunu HTML'e embed et
+    html = html.replaceAll(
+      '<!-- PDF_URL_PLACEHOLDER -->',
+      '''
+      <script>
+        // PDF dosyasını yükle
+        window.pdfUrl = "$pdfPath";
+        
+        // PDF.js'i başlat
+        pdfjsLib.getDocument(window.pdfUrl).promise.then(function(pdf) {
+          window.pdfViewer.setDocument(pdf);
+        });
+      </script>
+      '''
+    );
+    
+    return html;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(document.title),
+        title: Text('PDF Viewer - ${pdfPath.split('/').last}'),
+        backgroundColor: Colors.red,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.picture_as_pdf, size: 100, color: Colors.red),
-            const SizedBox(height: 20),
-            Text(
-              document.title,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '${document.pageCount} sayfa',
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              document.filePath.split('/').last,
-              style: const TextStyle(fontSize: 14, color: Colors.blue),
-            ),
-            const SizedBox(height: 30),
-            Container(
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.green),
-              ),
-              child: const Column(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 40),
-                  SizedBox(height: 10),
-                  Text(
-                    'PDF Başarıyla Açıldı!',
-                    style: TextStyle(fontSize: 16, color: Colors.green),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    'MuPDF motoru çalışıyor',
-                    style: TextStyle(fontSize: 12, color: Colors.green),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      body: WebView(
+        initialUrl: 'data:text/html;charset=utf-8,${Uri.encodeComponent(_generatePDFViewerHTML())}',
+        javascriptMode: JavascriptMode.unrestricted,
+        onWebViewCreated: (WebViewController webViewController) {
+          print('PDF Viewer opened: $pdfPath');
+        },
       ),
     );
   }
@@ -223,76 +200,9 @@ class PDFViewScreen extends StatelessWidget {
 class FileDocument {
   final String title;
   final String filePath;
-  final int pageCount;
 
   FileDocument({
     required this.title,
     required this.filePath,
-    required this.pageCount,
   });
-}
-
-class PDFDocument {
-  final String title;
-  final int pageCount;
-  final String filePath;
-
-  PDFDocument({
-    required this.title,
-    required this.pageCount,
-    required this.filePath,
-  });
-}
-
-class PDFNativeService {
-  static DynamicLibrary? _nativeLib;
-  
-  DynamicLibrary get _lib {
-    _nativeLib ??= DynamicLibrary.open('libpdf_renderer.so');
-    return _nativeLib!;
-  }
-
-  late final int Function() _initContext = 
-      _lib.lookupFunction<Int64 Function(), int Function()>(
-          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_initContext');
-  
-  late final int Function(int, Pointer<Utf8>) _openDocument = 
-      _lib.lookupFunction<Int64 Function(Int64, Pointer<Utf8>), int Function(int, Pointer<Utf8>)>(
-          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument');
-  
-  late final int Function(int, int) _getPageCount = 
-      _lib.lookupFunction<Int32 Function(Int64, Int64), int Function(int, int)>(
-          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getPageCount');
-  
-  late final Pointer<Utf8> Function(int, int) _getDocumentTitle = 
-      _lib.lookupFunction<Pointer<Utf8> Function(Int64, Int64), Pointer<Utf8> Function(int, int)>(
-          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getDocumentTitle');
-
-  Future<PDFDocument> openPDF(String filePath) async {
-    try {
-      final context = _initContext();
-      final pathPtr = filePath.toNativeUtf8();
-      final documentPtr = _openDocument(context, pathPtr);
-      
-      if (documentPtr == 0) {
-        malloc.free(pathPtr);
-        throw Exception('PDF açılamadı');
-      }
-      
-      final pageCount = _getPageCount(context, documentPtr);
-      final titlePtr = _getDocumentTitle(context, documentPtr);
-      
-      final document = PDFDocument(
-        title: titlePtr.toDartString(),
-        pageCount: pageCount,
-        filePath: filePath,
-      );
-      
-      malloc.free(pathPtr);
-      return document;
-      
-    } catch (e) {
-      rethrow;
-    }
-  }
 }
