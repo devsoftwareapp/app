@@ -1,0 +1,3 @@
+[submodule "android/app/src/main/cpp/mupdf"]
+	path = android/app/src/main/cpp/mupdf
+	url = https://github.com/ArtifexSoftware/mupdf.git
