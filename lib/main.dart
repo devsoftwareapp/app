@@ -15,34 +15,56 @@ class _MyAppState extends State<MyApp> {
   String _sonuc = "Test edilmedi...";
   bool _testEdiliyor = false;
 
-  void _testCpp() async {
+  void _testPDFium() async {
     setState(() {
       _testEdiliyor = true;
-      _sonuc = "🔧 Test başlıyor...";
+      _sonuc = "🔧 PDFium Testi Başlıyor...";
     });
 
-    await Future.delayed(const Duration(milliseconds: 100));
-
     try {
-      setState(() => _sonuc = "📚 Library yükleniyor...");
+      setState(() => _sonuc = "📚 Native Library Yükleniyor...");
       final lib = DynamicLibrary.open('libpdf_renderer.so');
-      setState(() => _sonuc = "✅ Library yüklendi!");
+      setState(() => _sonuc = "✅ Native Library Yüklendi!");
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      // PDFium Fonksiyonlarını Yükle
+      setState(() => _sonuc = "🔍 PDFium Fonksiyonları Aranıyor...");
       
-      setState(() => _sonuc = "🔍 Fonksiyon aranıyor...");
-      final simpleAdd = lib.lookupFunction<
-        Int32 Function(Int32, Int32),
-        int Function(int, int)
-      >('Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_simpleAdd');
-      setState(() => _sonuc = "✅ Fonksiyon bulundu!");
+      final initPDFium = lib.lookupFunction<
+        Int32 Function(),
+        int Function()
+      >('Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_initPDFium');
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      final openDocument = lib.lookupFunction<
+        Int64 Function(Pointer<Utf8>),
+        int Function(Pointer<Utf8>)
+      >('Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument');
+
+      final getPageCount = lib.lookupFunction<
+        Int32 Function(Int64),
+        int Function(int)
+      >('Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getPageCount');
+
+      setState(() => _sonuc = "✅ PDFium Fonksiyonları Bulundu!");
+
+      // PDFium Testi
+      setState(() => _sonuc = "🎯 PDFium Başlatılıyor...");
+      final initResult = initPDFium();
       
-      setState(() => _sonuc = "🎯 Fonksiyon çağrılıyor...");
-      final result = simpleAdd(2, 3);
-      
-      setState(() => _sonuc = "🎉 BAŞARILI! 2 + 3 = $result\n\nC++ ÇALIŞIYOR! 🚀");
+      setState(() => _sonuc = "📄 PDF Belgesi Açılıyor...");
+      final testPath = "test.pdf".toNativeUtf8();
+      final documentPtr = openDocument(testPath);
+      malloc.free(testPath);
+
+      setState(() => _sonuc = "📊 Sayfa Sayısı Alınıyor...");
+      final pageCount = getPageCount(documentPtr);
+
+      setState(() {
+        _sonuc = "🎉 PDFIUM BACKEND ÇALIŞIYOR! 🚀\n\n"
+                "✅ PDFium Init: $initResult\n"
+                "✅ Document Pointer: 0x${documentPtr.toRadixString(16)}\n"
+                "✅ Page Count: $pageCount\n\n"
+                "🎯 PDFium Backend Hazır!";
+      });
 
     } catch (e) {
       setState(() => _sonuc = "❌ HATA: $e");
@@ -55,7 +77,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('C++ Test - EKRAN')),
+        appBar: AppBar(title: const Text('🎯 PDFIUM BACKEND TEST')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -70,12 +92,12 @@ class _MyAppState extends State<MyApp> {
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.build, size: 50, color: Colors.blue),
+                    const Icon(Icons.picture_as_pdf, size: 50, color: Colors.red),
                     const SizedBox(height: 20),
                     Text(
                       _sonuc,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 18),
+                      style: const TextStyle(fontSize: 16),
                     ),
                     if (_testEdiliyor) ...[
                       const SizedBox(height: 20),
@@ -84,15 +106,13 @@ class _MyAppState extends State<MyApp> {
                   ],
                 ),
               ),
-              const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: _testEdiliyor ? null : _testCpp,
+                onPressed: _testEdiliyor ? null : _testPDFium,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
-                child: const Text('🎯 C++ TESTİ BAŞLAT'),
+                child: const Text('🎯 PDFIUM TESTİ BAŞLAT'),
               ),
             ],
           ),
