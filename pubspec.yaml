@@ -10,7 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   permission_handler: ^11.0.1
-  ffi: ^2.1.0
+  ffi: ^2.1.4
+  file_picker: ^10.3.7
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
@@ -18,5 +20,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/test.pdf
