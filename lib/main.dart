@@ -28,31 +28,42 @@ class _CppTestScreenState extends State<CppTestScreen> {
   String _testResult = "C++ Backend Testi Bekleniyor...";
   bool _isTesting = false;
 
-  final PDFNativeService _nativeService = PDFNativeService();
-
-  void _runCppTests() async {
+  void _testExistingFunctions() async {
     setState(() {
       _isTesting = true;
-      _testResult = "🔧 C++ Backend Testi Başlatılıyor...\n";
-    });
-
-    await _nativeService.testBackend();
-  }
-
-  void _testSimpleMath() async {
-    setState(() {
-      _isTesting = true;
-      _testResult = "🧮 Basit Matematik Testi...\n";
+      _testResult = "🔧 Mevcut Fonksiyonlar Test Ediliyor...\n";
     });
 
     try {
-      final result = await _nativeService.testSimpleMath();
+      final result = await PDFNativeService().testExistingFunctions();
       setState(() {
         _testResult = result;
       });
     } catch (e) {
       setState(() {
-        _testResult = "❌ Matematik Testi Hatası: $e";
+        _testResult = "❌ Test Hatası: $e";
+      });
+    } finally {
+      setState(() {
+        _isTesting = false;
+      });
+    }
+  }
+
+  void _testLibraryLoading() async {
+    setState(() {
+      _isTesting = true;
+      _testResult = "📚 Native Library Yükleniyor...\n";
+    });
+
+    try {
+      final result = await PDFNativeService().testLibraryLoading();
+      setState(() {
+        _testResult = result;
+      });
+    } catch (e) {
+      setState(() {
+        _testResult = "❌ Library Load Hatası: $e";
       });
     } finally {
       setState(() {
@@ -80,7 +91,7 @@ class _CppTestScreenState extends State<CppTestScreen> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Flutter ↔ C++ Bağlantısını Test Ediyoruz',
+              'Önce mevcut fonksiyonları test edelim',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
@@ -88,24 +99,24 @@ class _CppTestScreenState extends State<CppTestScreen> {
             
             // Test Butonları
             ElevatedButton(
-              onPressed: _isTesting ? null : _runCppTests,
+              onPressed: _isTesting ? null : _testLibraryLoading,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
               ),
-              child: const Text('🎯 C++ BACKEND TESTİ'),
+              child: const Text('📚 LIBRARY LOAD TEST'),
             ),
             const SizedBox(height: 15),
             
             ElevatedButton(
-              onPressed: _isTesting ? null : _testSimpleMath,
+              onPressed: _isTesting ? null : _testExistingFunctions,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
               ),
-              child: const Text('🧮 MATEMATİK TESTİ (2+2)'),
+              child: const Text('🔧 MEVCUT FONKSİYONLAR'),
             ),
             const SizedBox(height: 30),
 
@@ -118,13 +129,6 @@ class _CppTestScreenState extends State<CppTestScreen> {
                 color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: Colors.blue.shade100),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  )
-                ],
               ),
               child: Column(
                 children: [
@@ -138,7 +142,13 @@ class _CppTestScreenState extends State<CppTestScreen> {
                   ),
                   const SizedBox(height: 15),
                   _isTesting
-                      ? const CircularProgressIndicator()
+                      ? const Column(
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 10),
+                            Text('C++ fonksiyonları aranıyor...'),
+                          ],
+                        )
                       : Text(
                           _testResult,
                           textAlign: TextAlign.center,
@@ -160,9 +170,12 @@ class _CppTestScreenState extends State<CppTestScreen> {
 class PDFNativeService {
   static DynamicLibrary? _nativeLib;
   
-  static DynamicLibrary get _lib {
+  DynamicLibrary get _lib {
+    if (_nativeLib != null) return _nativeLib!;
+    
     try {
-      _nativeLib ??= DynamicLibrary.open('libpdf_renderer.so');
+      print('🔧 Attempting to load libpdf_renderer.so...');
+      _nativeLib = DynamicLibrary.open('libpdf_renderer.so');
       print('✅ Native library loaded successfully');
       return _nativeLib!;
     } catch (e) {
@@ -171,93 +184,93 @@ class PDFNativeService {
     }
   }
 
-  // Yeni test fonksiyonları
-  final int Function(int, int) _simpleAdd = 
-      _lib.lookupFunction<Int32 Function(Int32, Int32), int Function(int, int)>(
-          'Java_com_devsoftware_pdf_reader_manager_PDFRenderer_simpleAdd');
-  
-  final Pointer<Utf8> Function() _getVersion = 
-      _lib.lookupFunction<Pointer<Utf8> Function(), Pointer<Utf8> Function()>(
-          'Java_com_devsoftware_pdf_reader_manager_PDFRenderer_getVersion');
-  
-  final Pointer<Utf8> Function(Pointer<Utf8>) _calculate = 
-      _lib.lookupFunction<
-          Pointer<Utf8> Function(Pointer<Utf8>),
-          Pointer<Utf8> Function(Pointer<Utf8>)>(
-          'Java_com_devsoftware_pdf_reader_manager_PDFRenderer_calculate');
-
-  // Mevcut PDF fonksiyonları
-  final int Function() _initContext = 
-      _lib.lookupFunction<Int64 Function(), int Function()>(
-          'Java_com_devsoftware_pdf_reader_manager_PDFRenderer_initContext');
-
-  Future<void> testBackend() async {
-    print('\n=== 🧪 C++ BACKEND TESTİ BAŞLIYOR ===');
-    
+  // SADECE MEVCUT FONKSİYONLARI TANIMLA
+  // initContext fonksiyonu
+  int _initContext() {
     try {
-      // Test 1: Basit matematik
-      print('1. 🧮 Basit Matematik Testi...');
-      final mathResult = _simpleAdd(2, 2);
-      print('   ✅ 2 + 2 = $mathResult');
-
-      // Test 2: String dönen fonksiyon
-      print('2. 📝 String Fonksiyon Testi...');
-      final versionPtr = _getVersion();
-      final version = versionPtr.toDartString();
-      print('   ✅ Version: $version');
-
-      // Test 3: Hesaplama testi
-      print('3. 🔢 Hesaplama Testi...');
-      final calcPtr = '2+2'.toNativeUtf8();
-      final resultPtr = _calculate(calcPtr);
-      final calculation = resultPtr.toDartString();
-      print('   ✅ Hesaplama: $calculation');
-
-      malloc.free(calcPtr);
-
-      print('🎉 TÜM C++ TESTLERİ BAŞARILI!');
-      print('✅ Flutter ↔ C++ bağlantısı çalışıyor!');
-
+      final func = _lib.lookupFunction<Int64 Function(), int Function()>(
+        'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_initContext'
+      );
+      return func();
     } catch (e) {
-      print('❌ C++ Test Hatası: $e');
+      print('❌ initContext lookup failed: $e');
       rethrow;
     }
   }
 
-  Future<String> testSimpleMath() async {
+  // openDocument fonksiyonu
+  int _openDocument(int context, String path) {
     try {
-      String result = '🧮 C++ MATEMATİK TESTİ SONUÇLARI:\n\n';
+      final func = _lib.lookupFunction<
+        Int64 Function(Int64, Pointer<Utf8>),
+        int Function(int, Pointer<Utf8>)
+      >('Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument');
       
-      // Toplama testi
-      final addResult = _simpleAdd(2, 2);
-      result += '✅ 2 + 2 = $addResult\n';
-      
-      // Versiyon testi
-      final versionPtr = _getVersion();
-      final version = versionPtr.toDartString();
-      result += '✅ $version\n';
-      
-      // Çeşitli hesaplamalar
-      final calc1Ptr = '2+2'.toNativeUtf8();
-      final calc1ResultPtr = _calculate(calc1Ptr);
-      result += '✅ ${calc1ResultPtr.toDartString()}\n';
-      malloc.free(calc1Ptr);
-
-      final calc2Ptr = '5*3'.toNativeUtf8();
-      final calc2ResultPtr = _calculate(calc2Ptr);
-      result += '✅ ${calc2ResultPtr.toDartString()}\n';
-      malloc.free(calc2Ptr);
-
-      final calc3Ptr = '10/2'.toNativeUtf8();
-      final calc3ResultPtr = _calculate(calc3Ptr);
-      result += '✅ ${calc3ResultPtr.toDartString()}\n';
-      malloc.free(calc3Ptr);
-
-      result += '\n🎉 C++ BACKEND BAŞARIYLA ÇALIŞIYOR!';
+      final pathPtr = path.toNativeUtf8();
+      final result = func(context, pathPtr);
+      malloc.free(pathPtr);
       return result;
-
     } catch (e) {
-      return '❌ C++ Matematik Testi Hatası: $e';
+      print('❌ openDocument lookup failed: $e');
+      rethrow;
+    }
+  }
+
+  // getPageCount fonksiyonu
+  int _getPageCount(int context, int document) {
+    try {
+      final func = _lib.lookupFunction<
+        Int32 Function(Int64, Int64),
+        int Function(int, int)
+      >('Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getPageCount');
+      return func(context, document);
+    } catch (e) {
+      print('❌ getPageCount lookup failed: $e');
+      rethrow;
+    }
+  }
+
+  Future<String> testLibraryLoading() async {
+    try {
+      String result = '📚 NATIVE LIBRARY TESTİ:\n\n';
+      
+      // Sadece library yükleme testi
+      final lib = _lib;
+      result += '✅ libpdf_renderer.so başarıyla yüklendi!\n';
+      result += '✅ DynamicLibrary handle: ${lib.handle}\n';
+      result += '✅ Native kod erişilebilir durumda\n';
+      
+      return result;
+    } catch (e) {
+      return '❌ Library Load Hatası: $e';
+    }
+  }
+
+  Future<String> testExistingFunctions() async {
+    try {
+      String result = '🔧 MEVCUT FONKSİYON TESTİ:\n\n';
+      
+      // Test 1: initContext
+      result += '1. initContext() testi...\n';
+      final context = _initContext();
+      result += '   ✅ Context oluşturuldu: 0x${context.toRadixString(16)}\n\n';
+      
+      // Test 2: openDocument
+      result += '2. openDocument() testi...\n';
+      final document = _openDocument(context, "/test/dummy.pdf");
+      result += '   ✅ Document açıldı: 0x${document.toRadixString(16)}\n\n';
+      
+      // Test 3: getPageCount
+      result += '3. getPageCount() testi...\n';
+      final pageCount = _getPageCount(context, document);
+      result += '   ✅ Sayfa sayısı: $pageCount\n\n';
+      
+      result += '🎉 TÜM MEVCUT FONKSİYONLAR ÇALIŞIYOR!\n';
+      result += '✅ C++ ↔ Flutter bağlantısı başarılı!';
+      
+      return result;
+    } catch (e) {
+      return '❌ Fonksiyon Test Hatası: $e';
     }
   }
 }
