@@ -4,41 +4,41 @@ project("pdf_renderer")
 
 # MuPDF source files
 set(MUPDF_SRC
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/archive.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/buffer.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/color.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/context.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/crypt.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/document.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/geometry.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/glyph.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/hash.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/image.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/output.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/pixmap.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/stream.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/string.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/stext.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/store.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/tree.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz/util.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-annot.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-cmap.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-crypt.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-device.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-document.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-font.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-form.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-image.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-object.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-page.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-parse.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-pattern.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-resource.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-shade.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-stream.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-type3.c
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf/pdf-xref.c
+    mupdf/source/fitz/archive.c
+    mupdf/source/fitz/buffer.c
+    mupdf/source/fitz/color.c
+    mupdf/source/fitz/context.c
+    mupdf/source/fitz/crypt.c
+    mupdf/source/fitz/document.c
+    mupdf/source/fitz/geometry.c
+    mupdf/source/fitz/glyph.c
+    mupdf/source/fitz/hash.c
+    mupdf/source/fitz/image.c
+    mupdf/source/fitz/output.c
+    mupdf/source/fitz/pixmap.c
+    mupdf/source/fitz/stream.c
+    mupdf/source/fitz/string.c
+    mupdf/source/fitz/stext.c
+    mupdf/source/fitz/store.c
+    mupdf/source/fitz/tree.c
+    mupdf/source/fitz/util.c
+    mupdf/source/pdf/pdf-annot.c
+    mupdf/source/pdf/pdf-cmap.c
+    mupdf/source/pdf/pdf-crypt.c
+    mupdf/source/pdf/pdf-device.c
+    mupdf/source/pdf/pdf-document.c
+    mupdf/source/pdf/pdf-font.c
+    mupdf/source/pdf/pdf-form.c
+    mupdf/source/pdf/pdf-image.c
+    mupdf/source/pdf/pdf-object.c
+    mupdf/source/pdf/pdf-page.c
+    mupdf/source/pdf/pdf-parse.c
+    mupdf/source/pdf/pdf-pattern.c
+    mupdf/source/pdf/pdf-resource.c
+    mupdf/source/pdf/pdf-shade.c
+    mupdf/source/pdf/pdf-stream.c
+    mupdf/source/pdf/pdf-type3.c
+    mupdf/source/pdf/pdf-xref.c
 )
 
 add_library(
@@ -48,9 +48,9 @@ add_library(
 )
 
 target_include_directories(mupdf PRIVATE
-    ${CMAKE_SOURCE_DIR}/mupdf/include
-    ${CMAKE_SOURCE_DIR}/mupdf/source/fitz
-    ${CMAKE_SOURCE_DIR}/mupdf/source/pdf
+    mupdf/include
+    mupdf/source/fitz
+    mupdf/source/pdf
 )
 
 # Main native library - BU .so'yu oluşturacak
@@ -61,7 +61,7 @@ add_library(
 )
 
 target_include_directories(pdf_renderer PRIVATE
-    ${CMAKE_SOURCE_DIR}/mupdf/include
+    mupdf/include
 )
 
 target_link_libraries(
