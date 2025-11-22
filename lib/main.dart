@@ -1,8 +1,8 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
+import 'dart:math';
 
 void main() => runApp(const PDFReaderApp());
 
@@ -12,7 +12,7 @@ class PDFReaderApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PDF Reader',
+      title: 'PDF Reader + Arama',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
@@ -31,7 +31,38 @@ class PDFLibraryScreen extends StatefulWidget {
 
 class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
   final List<PDFDocument> _documents = [];
+  final List<PDFDocument> _filteredDocuments = [];
   bool _isLoading = false;
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_searchPDFs);
+  }
+
+  void _searchPDFs() {
+    final query = _searchController.text.toLowerCase();
+    
+    if (query.isEmpty) {
+      setState(() {
+        _filteredDocuments.clear();
+        _filteredDocuments.addAll(_documents);
+        _isSearching = false;
+      });
+    } else {
+      setState(() {
+        _filteredDocuments.clear();
+        _filteredDocuments.addAll(
+          _documents.where((doc) => 
+            doc.name.toLowerCase().contains(query)
+          ).toList()
+        );
+        _isSearching = true;
+      });
+    }
+  }
 
   Future<void> _pickPDF() async {
     try {
@@ -50,7 +81,6 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
               name: file.name,
               path: file.path!,
               dateAdded: DateTime.now(),
-              pageCount: _getMockPageCount(file.name),
               fileSize: file.size,
             );
             
@@ -58,6 +88,7 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
           }
         }
         
+        _searchPDFs();
         setState(() => _isLoading = false);
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,36 +109,84 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
     }
   }
 
-  int _getMockPageCount(String fileName) {
-    return fileName.length % 20 + 5;
+  void _openPDF(PDFDocument document) async {
+    try {
+      final file = File(document.path);
+      if (await file.exists()) {
+        final uri = Uri.file(file.path);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        } else {
+          _showSnackBar('PDF görüntüleyici bulunamadı', Colors.orange);
+        }
+      } else {
+        _showSnackBar('PDF dosyası bulunamadı', Colors.red);
+      }
+    } catch (e) {
+      _showSnackBar('PDF açılamadı: $e', Colors.red);
+    }
   }
 
-  void _openPDF(PDFDocument document) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PDFiumViewerScreen(document: document),
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+      ),
+    );
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'PDF ara...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: _clearSearch,
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildPDFGrid() {
-    if (_documents.isEmpty) {
+    final displayDocuments = _isSearching ? _filteredDocuments : _documents;
+    
+    if (displayDocuments.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_open, size: 80, color: Colors.grey[300]),
+            Icon(
+              _isSearching ? Icons.search_off : Icons.folder_open,
+              size: 80,
+              color: Colors.grey[300],
+            ),
             const SizedBox(height: 20),
             Text(
-              'Henüz PDF yok',
-              style: TextStyle(fontSize: 18, color: Colors.grey[500]),
+              _isSearching ? 'Arama sonucu bulunamadı' : 'Henüz PDF yok',
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
             ),
             const SizedBox(height: 10),
             Text(
-              'Sağ alttaki + butonuna tıkla\nve PDF ekle',
+              _isSearching 
+                  ? 'Farklı bir anahtar kelime deneyin'
+                  : 'Sağ alttaki + butonuna tıkla\nve PDF ekle',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
         ),
@@ -115,15 +194,15 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         childAspectRatio: 0.7,
       ),
-      itemCount: _documents.length,
-      itemBuilder: (context, index) => _buildPDFCard(_documents[index]),
+      itemCount: displayDocuments.length,
+      itemBuilder: (context, index) => _buildPDFCard(displayDocuments[index]),
     );
   }
 
@@ -142,10 +221,10 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
                   children: [
                     Icon(Icons.picture_as_pdf, size: 50, color: Colors.red),
                     const SizedBox(height: 8),
-                    Text(
+                    const Text(
                       'PDF',
                       style: TextStyle(
-                        color: Colors.red[700],
+                        color: Colors.red,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -169,10 +248,10 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${document.pageCount} sayfa',
-                    style: TextStyle(
+                    _formatFileSize(document.fileSize),
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Colors.grey,
                     ),
                   ),
                 ],
@@ -184,17 +263,31 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
     );
   }
 
+  String _formatFileSize(int bytes) {
+    if (bytes <= 0) return '0 B';
+    const suffixes = ['B', 'KB', 'MB', 'GB'];
+    var i = (log(bytes) / log(1024)).floor();
+    return '${(bytes / pow(1024, i)).toStringAsFixed(1)} ${suffixes[i]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PDF Kütüphanem'),
+        title: Text(_isSearching ? 'Arama Sonuçları' : 'PDF Kütüphanem'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildPDFGrid(),
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _buildPDFGrid(),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _pickPDF,
         backgroundColor: Colors.blue,
@@ -205,118 +298,43 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
   }
 }
 
-class PDFiumViewerScreen extends StatefulWidget {
+class PDFViewerScreen extends StatelessWidget {
   final PDFDocument document;
 
-  const PDFiumViewerScreen({super.key, required this.document});
-
-  @override
-  State<PDFiumViewerScreen> createState() => _PDFiumViewerScreenState();
-}
-
-class _PDFiumViewerScreenState extends State<PDFiumViewerScreen> {
-  int _currentPage = 1;
-
-  void _nextPage() {
-    if (_currentPage < widget.document.pageCount) {
-      setState(() => _currentPage++);
-    }
-  }
-
-  void _previousPage() {
-    if (_currentPage > 1) {
-      setState(() => _currentPage--);
-    }
-  }
+  const PDFViewerScreen({super.key, required this.document});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.document.name),
+        title: Text(document.name),
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.grey[100],
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Sayfa $_currentPage / ${widget.document.pageCount}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: _previousPage,
-                      icon: const Icon(Icons.arrow_back),
-                    ),
-                    IconButton(
-                      onPressed: _nextPage,
-                      icon: const Icon(Icons.arrow_forward),
-                    ),
-                  ],
-                ),
-              ],
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.picture_as_pdf, size: 100, color: Colors.grey),
+            const SizedBox(height: 20),
+            Text(
+              document.name,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.picture_as_pdf, size: 100, color: Colors.grey),
-                  const SizedBox(height: 20),
-                  Text(
-                    widget.document.name,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'PDFium Viewer - Sayfa $_currentPage',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      _testBackendConnection();
-                    },
-                    child: const Text('Backend Test'),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 10),
+            Text(
+              _formatFileSize(document.fileSize),
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  void _testBackendConnection() async {
-    try {
-      final lib = DynamicLibrary.open('libpdf_renderer.so');
-      final initPDFium = lib.lookupFunction<Int32 Function(), int Function()>(
-        'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_initPDFium'
-      );
-      
-      final result = initPDFium();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Backend bağlantısı: ${result == 1 ? "BAŞARILI" : "HATA"}'),
-          backgroundColor: result == 1 ? Colors.green : Colors.red,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Backend hatası: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+  String _formatFileSize(int bytes) {
+    if (bytes <= 0) return '0 B';
+    const suffixes = ['B', 'KB', 'MB', 'GB'];
+    var i = (log(bytes) / log(1024)).floor();
+    return '${(bytes / pow(1024, i)).toStringAsFixed(1)} ${suffixes[i]}';
   }
 }
 
@@ -324,14 +342,12 @@ class PDFDocument {
   final String name;
   final String path;
   final DateTime dateAdded;
-  final int pageCount;
   final int fileSize;
 
   PDFDocument({
     required this.name,
     required this.path,
     required this.dateAdded,
-    required this.pageCount,
     required this.fileSize,
   });
 }
