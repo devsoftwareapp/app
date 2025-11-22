@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   file_picker: ^10.3.7
   url_launcher: ^6.2.2
+  path_provider: ^2.1.1  # YENİ EKLENDİ
 
 dev_dependencies:
   flutter_test:
