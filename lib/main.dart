@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 
 void main() => runApp(const PDFReaderApp());
 
@@ -11,93 +13,232 @@ class PDFReaderApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: PDFTestScreen(),
+      title: 'PDF Reader',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const PDFListScreen(),
     );
   }
 }
 
-class PDFTestScreen extends StatefulWidget {
+class PDFListScreen extends StatefulWidget {
+  const PDFListScreen({super.key});
+
   @override
-  State<PDFTestScreen> createState() => _PDFTestScreenState();
+  State<PDFListScreen> createState() => _PDFListScreenState();
 }
 
-class _PDFTestScreenState extends State<PDFTestScreen> {
+class _PDFListScreenState extends State<PDFListScreen> {
+  final List<PDFDocument> _documents = [];
   final _pdfService = PDFNativeService();
-  String _sonuc = "PDF Testi Bekleniyor...";
   bool _isLoading = false;
 
-  Future<void> _openPDF() async {
-    setState(() {
-      _isLoading = true;
-      _sonuc = "📚 PDF Açılıyor...";
-    });
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+  }
 
-    try {
-      final result = await _pdfService.openTestPDF();
-      setState(() {
-        _sonuc = result;
-      });
-    } catch (e) {
-      setState(() {
-        _sonuc = "❌ HATA: $e";
-      });
-    } finally {
-      setState(() => _isLoading = false);
+  Future<void> _requestPermissions() async {
+    final status = await Permission.manageExternalStorage.request();
+    if (!status.isGranted) {
+      await Permission.storage.request();
     }
+  }
+
+  Future<void> _importPDF() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        setState(() => _isLoading = true);
+        
+        final filePath = result.files.single.path!;
+        final document = await _pdfService.openPDF(filePath);
+        
+        setState(() {
+          _documents.add(document);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showError('PDF açılamadı: $e');
+    }
+  }
+
+  void _openPDF(PDFDocument document) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PDFViewScreen(document: document),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PDF Reader - TEST')),
+      appBar: AppBar(
+        title: const Text('PDF Reader'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _importPDF,
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _documents.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.folder_open, size: 80, color: Colors.grey),
+                      SizedBox(height: 20),
+                      Text(
+                        'Henüz PDF yok',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Sağ üstten PDF ekleyin',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _documents.length,
+                  itemBuilder: (context, index) {
+                    final doc = _documents[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      child: ListTile(
+                        leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                        title: Text(doc.title),
+                        subtitle: Text('${doc.pageCount} sayfa • ${doc.filePath.split('/').last}'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () => _openPDF(doc),
+                      ),
+                    );
+                  },
+                ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _importPDF,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class PDFViewScreen extends StatelessWidget {
+  final PDFDocument document;
+
+  const PDFViewScreen({super.key, required this.document});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(document.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('PDF Bilgisi'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Başlık: ${document.title}'),
+                      Text('Sayfa: ${document.pageCount}'),
+                      Text('Yol: ${document.filePath}'),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Tamam'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.picture_as_pdf, size: 80, color: Colors.red),
+            const Icon(Icons.picture_as_pdf, size: 100, color: Colors.red),
+            const SizedBox(height: 20),
+            Text(
+              document.title,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${document.pageCount} sayfa',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Colors.green[50],
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.red),
+                border: Border.all(color: Colors.green),
               ),
-              child: Column(
+              child: const Column(
                 children: [
-                  const Text(
-                    'PDF TEST SONUCU',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
-                  ),
-                  const SizedBox(height: 15),
+                  Icon(Icons.check_circle, color: Colors.green, size: 40),
+                  SizedBox(height: 10),
                   Text(
-                    _sonuc,
+                    'PDF Başarıyla Açıldı!',
+                    style: TextStyle(fontSize: 16, color: Colors.green),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16),
                   ),
-                  if (_isLoading) ...[
-                    const SizedBox(height: 20),
-                    const CircularProgressIndicator(),
-                  ]
+                  SizedBox(height: 5),
+                  Text(
+                    'MuPDF motoru çalışıyor',
+                    style: TextStyle(fontSize: 12, color: Colors.green),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _openPDF,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-              ),
-              child: const Text('📄 PDF AÇ'),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class PDFDocument {
+  final String title;
+  final int pageCount;
+  final String filePath;
+
+  PDFDocument({
+    required this.title,
+    required this.pageCount,
+    required this.filePath,
+  });
 }
 
 class PDFNativeService {
@@ -108,7 +249,6 @@ class PDFNativeService {
     return _nativeLib!;
   }
 
-  // C++ fonksiyonları - LATE FINAL
   late final int Function() _initContext = 
       _lib.lookupFunction<Int64 Function(), int Function()>(
           'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_initContext');
@@ -125,48 +265,46 @@ class PDFNativeService {
       _lib.lookupFunction<Pointer<Utf8> Function(Int64, Int64), Pointer<Utf8> Function(int, int)>(
           'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getDocumentTitle');
 
+  late final Pointer<Utf8> Function(int, int) _getFilePath = 
+      _lib.lookupFunction<Pointer<Utf8> Function(Int64, Int64), Pointer<Utf8> Function(int, int)>(
+          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getFilePath');
+
   late final void Function(int, int) _closeDocument = 
       _lib.lookupFunction<Void Function(Int64, Int64), void Function(int, int)>(
           'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_closeDocument');
 
-  Future<String> openTestPDF() async {
+  Future<PDFDocument> openPDF(String filePath) async {
     try {
-      String result = '';
-
-      // 1. Context oluştur
-      result += '🔧 Context oluşturuluyor...\n';
+      // Context oluştur
       final context = _initContext();
-      result += '✅ Context: 0x${context.toRadixString(16)}\n\n';
-
-      // 2. PDF aç
-      result += '📄 PDF açılıyor...\n';
-      final assetPath = 'assets/test.pdf';
-      final pathPtr = assetPath.toNativeUtf8();
-      final document = _openDocument(context, pathPtr);
-      result += '✅ Document: 0x${document.toRadixString(16)}\n\n';
-
-      // 3. Sayfa sayısı al
-      result += '📊 Sayfa sayısı alınıyor...\n';
-      final pageCount = _getPageCount(context, document);
-      result += '✅ Sayfa Sayısı: $pageCount\n\n';
-
-      // 4. Başlık al
-      result += '📝 Başlık alınıyor...\n';
-      final titlePtr = _getDocumentTitle(context, document);
-      final title = titlePtr.toDartString();
-      result += '✅ Başlık: $title\n\n';
-
-      result += '🎉 PDF BAŞARIYLA AÇILDI!\n';
-      result += '🚀 C++ PDF Render ÇALIŞIYOR!';
-
+      
+      // PDF aç
+      final pathPtr = filePath.toNativeUtf8();
+      final documentPtr = _openDocument(context, pathPtr);
+      
+      if (documentPtr == 0) {
+        throw Exception('PDF açılamadı: $filePath');
+      }
+      
+      // Bilgileri al
+      final pageCount = _getPageCount(context, documentPtr);
+      final titlePtr = _getDocumentTitle(context, documentPtr);
+      final filePathPtr = _getFilePath(context, documentPtr);
+      
+      final document = PDFDocument(
+        title: titlePtr.toDartString(),
+        pageCount: pageCount,
+        filePath: filePathPtr.toDartString(),
+      );
+      
       // Temizlik
-      _closeDocument(context, document);
+      _closeDocument(context, documentPtr);
       malloc.free(pathPtr);
-
-      return result;
-
+      
+      return document;
+      
     } catch (e) {
-      return '❌ PDF Açma Hatası: $e';
+      rethrow;
     }
   }
 }
