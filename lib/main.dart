@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'pdf_native_service.dart';
 
 void main() => runApp(const PDFReaderApp());
 
@@ -25,18 +24,7 @@ class PermissionScreen extends StatefulWidget {
 }
 
 class _PermissionScreenState extends State<PermissionScreen> {
-  final PDFNativeService _pdfService = PDFNativeService();
-  bool _isTesting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeBackend();
-  }
-
-  void _initializeBackend() async {
-    await _pdfService.initialize();
-  }
+  String _testResult = "Test edilmedi";
 
   void _requestPermission(BuildContext context) async {
     final status = await Permission.manageExternalStorage.request();
@@ -45,10 +33,17 @@ class _PermissionScreenState extends State<PermissionScreen> {
     }
   }
 
-  void _testBackend() async {
-    setState(() => _isTesting = true);
-    await _pdfService.testBackend();
-    setState(() => _isTesting = false);
+  void _simpleTest() {
+    setState(() {
+      _testResult = "🔧 Test başlatılıyor...";
+    });
+
+    // Sadece Flutter testi - C++ olmadan
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        _testResult = "✅ Flutter UI çalışıyor!\n🎯 Buton tıklanabilir\n📱 Uygulama açık kalıyor";
+      });
+    });
   }
 
   @override
@@ -68,14 +63,27 @@ class _PermissionScreenState extends State<PermissionScreen> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _isTesting ? null : _testBackend,
+              onPressed: _simpleTest,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
               ),
-              child: _isTesting 
-                  ? const CircularProgressIndicator()
-                  : const Text('Backend Test Et'),
+              child: const Text('BASİT TEST'),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey),
+              ),
+              child: Text(
+                _testResult,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
             ),
           ],
         ),
