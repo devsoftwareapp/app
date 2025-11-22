@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   permission_handler: ^11.0.1
+  ffi: ^2.1.0
 
 dev_dependencies:
   flutter_test:
