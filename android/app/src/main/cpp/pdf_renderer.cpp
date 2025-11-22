@@ -20,7 +20,7 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_simpleAdd(JNIEnv *env, job
 JNIEXPORT jstring JNICALL
 Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getVersion(JNIEnv *env, jobject thiz) {
     LOGI("🔢 C++: getVersion çağrıldı");
-    std::string version = "PDF Renderer v1.0 - C++ Backend Aktif!";
+    std::string version = "PDF Renderer v1.0 - C++ Backend Aktif! 🎉";
     return env->NewStringUTF(version.c_str());
 }
 
@@ -32,12 +32,12 @@ Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_calculate(JNIEnv *env, job
     std::string result;
     
     // Basit matematik işlemleri
-    if (strstr(op, "2+2")) {
-        result = "2 + 2 = 4 (C++ Hesapladı!)";
-    } else if (strstr(op, "5*3")) {
-        result = "5 × 3 = 15 (C++ Hesapladı!)";
-    } else if (strstr(op, "10/2")) {
-        result = "10 ÷ 2 = 5 (C++ Hesapladı!)";
+    if (std::string(op) == "2+2") {
+        result = "2 + 2 = 4 ✅ (C++ Hesapladı!)";
+    } else if (std::string(op) == "5*3") {
+        result = "5 × 3 = 15 ✅ (C++ Hesapladı!)";
+    } else if (std::string(op) == "10/2") {
+        result = "10 ÷ 2 = 5 ✅ (C++ Hesapladı!)";
     } else {
         result = "İşlem anlaşılamadı: " + std::string(op);
     }
