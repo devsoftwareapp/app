@@ -48,20 +48,20 @@ class PDFNativeService {
       _context = _initContext();
       _isInitialized = _context.address != 0;
       if (_isInitialized) {
-        print('MuPDF initialized successfully');
+        print('🎯 MuPDF initialized successfully - Context: ${_context.address}');
       } else {
-        print('Failed to initialize MuPDF');
+        print('❌ Failed to initialize MuPDF');
       }
       return _isInitialized;
     } catch (e) {
-      print('Error initializing MuPDF: $e');
+      print('❌ Error initializing MuPDF: $e');
       return false;
     }
   }
 
   Future<bool> openDocument(String filePath) async {
     if (!_isInitialized) {
-      print('PDFNativeService not initialized');
+      print('❌ PDFNativeService not initialized');
       return false;
     }
 
@@ -70,14 +70,14 @@ class PDFNativeService {
       _document = _openDocument(_context, pathPtr);
       final success = _document.address != 0;
       if (success) {
-        print('Document opened: $filePath');
-        print('Page count: ${getPageCount()}');
+        print('📄 Document opened: $filePath');
+        print('📖 Page count: ${getPageCount()}');
       } else {
-        print('Failed to open document: $filePath');
+        print('❌ Failed to open document: $filePath');
       }
       return success;
     } catch (e) {
-      print('Error opening document: $e');
+      print('❌ Error opening document: $e');
       return false;
     } finally {
       malloc.free(pathPtr);
@@ -91,44 +91,55 @@ class PDFNativeService {
     try {
       return _getPageCount(_context, _document);
     } catch (e) {
-      print('Error getting page count: $e');
+      print('❌ Error getting page count: $e');
       return 0;
     }
   }
 
   Future<void> testBackend() async {
-    print('=== Testing PDF Backend ===');
+    print('\n=== 🧪 TESTING PDF BACKEND ===');
     
-    // Test initialization
+    // Test 1: Initialization
+    print('1. Testing initialization...');
     final initSuccess = await initialize();
-    print('Initialization: $initSuccess');
+    print('   ✅ Initialization: $initSuccess');
     
     if (initSuccess) {
-      // Test with a sample PDF path (you'll need to provide a real PDF path)
+      // Test 2: Document operations
+      print('2. Testing document operations...');
+      
+      // Test with dummy path first
       const testPdfPath = '/storage/emulated/0/Download/test.pdf';
-      print('Testing with PDF: $testPdfPath');
+      print('   📁 Testing with PDF: $testPdfPath');
       
       final openSuccess = await openDocument(testPdfPath);
-      print('Document open: $openSuccess');
+      print('   ✅ Document open: $openSuccess');
       
       if (openSuccess) {
         final pageCount = getPageCount();
-        print('Page count: $pageCount');
+        print('   📊 Page count: $pageCount');
       }
+      
+      // Test 3: Function call without document
+      print('3. Testing function calls without document...');
+      final dummyCount = getPageCount();
+      print('   📊 Dummy page count: $dummyCount');
     }
     
-    print('=== Backend Test Complete ===');
+    print('=== ✅ BACKEND TEST COMPLETE ===\n');
   }
 
   void dispose() {
     if (_document.address != 0) {
       _closeDocument(_context, _document);
       _document = nullptr;
+      print('📄 Document closed');
     }
     
     if (_isInitialized) {
       _destroyContext(_context);
       _isInitialized = false;
+      print('🎯 MuPDF context destroyed');
     }
   }
 }
