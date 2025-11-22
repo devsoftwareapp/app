@@ -1,110 +1,72 @@
-import 'package:flutter/material.dart';
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
-
-void main() => runApp(const PDFReaderApp());
-
-class PDFReaderApp extends StatelessWidget {
-  const PDFReaderApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'PDF Reader',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const PDFListScreen(),
-    );
-  }
-}
-
-class PDFListScreen extends StatefulWidget {
-  const PDFListScreen({super.key});
-
-  @override
-  State<PDFListScreen> createState() => _PDFListScreenState();
-}
-
-class _PDFListScreenState extends State<PDFListScreen> {
-  final List<FileDocument> _documents = [];
-  final _pdfService = PDFNativeService();
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _requestPermissions();
+class PDFNativeService {
+  static DynamicLibrary? _nativeLib;
+  
+  DynamicLibrary get _lib {
+    _nativeLib ??= DynamicLibrary.open('libpdf_renderer.so');
+    return _nativeLib!;
   }
 
-  Future<void> _requestPermissions() async {
-    final status = await Permission.manageExternalStorage.request();
-    if (!status.isGranted) {
-      await Permission.storage.request();
-    }
-  }
+  late final int Function() _initContext = 
+      _lib.lookupFunction<Int64 Function(), int Function()>(
+          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_initContext');
+  
+  late final int Function(int, Pointer<Utf8>) _openDocument = 
+      _lib.lookupFunction<Int64 Function(Int64, Pointer<Utf8>), int Function(int, Pointer<Utf8>)>(
+          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_openDocument');
+  
+  late final int Function(int, int) _getPageCount = 
+      _lib.lookupFunction<Int32 Function(Int64, Int64), int Function(int, int)>(
+          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getPageCount');
+  
+  late final Pointer<Utf8> Function(int, int) _getDocumentTitle = 
+      _lib.lookupFunction<Pointer<Utf8> Function(Int64, Int64), Pointer<Utf8> Function(int, int)>(
+          'Java_com_devsoftware_pdf_1reader_1manager_PDFRenderer_getDocumentTitle');
 
-  Future<void> _importPDF() async {
+  Future<PDFDocument> openPDF(String filePath) async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        final filePath = result.files.single.path!;
-        final fileName = result.files.single.name;
-        
-        setState(() => _isLoading = true);
-
-        // SADECE DOSYA BİLGİSİNİ EKLE, C++ ÇAĞIRMA!
-        final document = FileDocument(
-          title: fileName,
-          filePath: filePath,
-          pageCount: 0, // Henüz bilmiyoruz
-        );
-        
-        setState(() {
-          _documents.add(document);
-          _isLoading = false;
-        });
+      print('🔧 C++ PDF açılıyor: $filePath');
+      
+      // Context oluştur
+      final context = _initContext();
+      print('✅ Context oluşturuldu');
+      
+      // PDF aç
+      final pathPtr = filePath.toNativeUtf8();
+      print('📤 Native string hazır');
+      
+      final documentPtr = _openDocument(context, pathPtr);
+      print('📄 Document pointer: $documentPtr');
+      
+      if (documentPtr == 0) {
+        malloc.free(pathPtr);
+        throw Exception('C++ PDF açılamadı');
       }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      _showError('PDF eklenemedi: ${e.toString()}');
-    }
-  }
-
-  void _openPDF(FileDocument document) async {
-    // TIKLAYINCA C++ ÇAĞIR
-    setState(() => _isLoading = true);
-    
-    try {
-      final pdfDoc = await _pdfService.openPDF(document.filePath);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PDFViewScreen(document: pdfDoc),
-        ),
+      
+      // Bilgileri al
+      final pageCount = _getPageCount(context, documentPtr);
+      print('📊 Sayfa sayısı: $pageCount');
+      
+      final titlePtr = _getDocumentTitle(context, documentPtr);
+      final title = titlePtr.toDartString();
+      print('📝 Başlık: $title');
+      
+      final document = PDFDocument(
+        title: title,
+        pageCount: pageCount,
+        filePath: filePath, // Orijinal path'i kullan
       );
+      
+      malloc.free(pathPtr);
+      print('🎉 C++ PDF başarılı');
+      
+      return document;
+      
     } catch (e) {
-      _showError('PDF açılamadı: ${e.toString()}');
-    } finally {
-      setState(() => _isLoading = false);
+      print('❌ C++ HATA: $e');
+      rethrow;
     }
   }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+}      appBar: AppBar(
         title: const Text('PDF Reader'),
         actions: [
           IconButton(
