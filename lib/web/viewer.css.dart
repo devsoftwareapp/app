@@ -3,6 +3,8 @@
 
 const String viewerCss = r'''
 
+
+
 /* Copyright 2014 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +21,7 @@ const String viewerCss = r'''
  */
 
 .messageBar{
-  --closing-button-icon:url(images/messageBar_closingButton.svg);
+  --closing-button-icon:url(assets/images/messageBar_closingButton.svg);
   --message-bar-close-button-color:var(--text-primary-color);
   --message-bar-close-button-color-hover:var(--text-primary-color);
   --message-bar-close-button-border-radius:4px;
@@ -173,7 +175,7 @@ const String viewerCss = r'''
   --csstools-light-dark-toggle--34:var(--csstools-color-scheme--light) #fbfbfe;
   --text-primary-color:var(--csstools-light-dark-toggle--34, #15141a);
 
-  --message-bar-icon:url(images/messageBar_info.svg);
+  --message-bar-icon:url(assets/images/messageBar_info.svg);
   --csstools-light-dark-toggle--35:var(--csstools-color-scheme--light) #73a7f3;
   --message-bar-icon-color:var(--csstools-light-dark-toggle--35, #0060df);
   --csstools-light-dark-toggle--36:var(--csstools-color-scheme--light) #003070;
@@ -797,7 +799,7 @@ const String viewerCss = r'''
       --message-bar-fg-color:var(--csstools-light-dark-toggle--63, #15141a);
       --csstools-light-dark-toggle--64:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.08);
       --message-bar-border-color:var(--csstools-light-dark-toggle--64, rgb(0 0 0 / 0.08));
-      --message-bar-icon:url(images/messageBar_warning.svg);
+      --message-bar-icon:url(assets/images/messageBar_warning.svg);
       --csstools-light-dark-toggle--65:var(--csstools-color-scheme--light) #e49c49;
       --message-bar-icon-color:var(--csstools-light-dark-toggle--65, #cd411e);
     }
@@ -2053,7 +2055,7 @@ const String viewerCss = r'''
 }
 
 :root{
-  --clear-signature-button-icon:url(images/editor-toolbar-delete.svg);
+  --clear-signature-button-icon:url(assets/images/editor-toolbar-delete.svg);
   --csstools-light-dark-toggle--71:var(--csstools-color-scheme--light) #2b2a33;
   --signature-bg:var(--csstools-light-dark-toggle--71, #f9f9fb);
   --csstools-light-dark-toggle--72:var(--csstools-color-scheme--light) var(--signature-bg);
@@ -2154,7 +2156,7 @@ const String viewerCss = r'''
 
 .signatureDialog .inputWithClearButton{
     --button-dimension:24px;
-    --clear-button-icon:url(images/messageBar_closingButton.svg);
+    --clear-button-icon:url(assets/images/messageBar_closingButton.svg);
 
     width:100%;
     position:relative;
@@ -2234,7 +2236,7 @@ const String viewerCss = r'''
   --thickness-label-color:var(--primary-color);
   --thickness-slider-color:var(--primary-color);
   --thickness-border:none;
-  --draw-cursor:url(images/cursor-editorInk.svg) 0 16, pointer;
+  --draw-cursor:url(assets/images/cursor-editorInk.svg) 0 16, pointer;
 }
 
 @media (prefers-color-scheme: dark){
@@ -2917,7 +2919,7 @@ const String viewerCss = r'''
         }
 
 .editDescription.altText{
-  --alt-text-add-image:url(images/editor-toolbar-edit.svg) !important;
+  --alt-text-add-image:url(assets/images/editor-toolbar-edit.svg) !important;
 }
 
 .editDescription.altText::before{
@@ -2940,7 +2942,7 @@ const String viewerCss = r'''
 }
 
 #commentManagerDialog{
-  --comment-close-button-icon:url(images/comment-closeButton.svg);
+  --comment-close-button-icon:url(assets/images/comment-closeButton.svg);
 }
 
 #commentManagerDialog .mainContainer{
@@ -3165,9 +3167,9 @@ const String viewerCss = r'''
 
 #editorCommentsSidebar,
 .commentPopup{
-  --comment-close-button-icon:url(images/comment-closeButton.svg);
-  --comment-popup-edit-button-icon:url(images/comment-popup-editButton.svg);
-  --comment-popup-delete-button-icon:url(images/editor-toolbar-delete.svg);
+  --comment-close-button-icon:url(assets/images/comment-closeButton.svg);
+  --comment-popup-edit-button-icon:url(assets/images/comment-popup-editButton.svg);
+  --comment-popup-delete-button-icon:url(assets/images/editor-toolbar-delete.svg);
 
   --csstools-light-dark-toggle--88:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.69);
 
@@ -3826,11 +3828,11 @@ const String viewerCss = r'''
       var(--outline-around-width)
   );
   --editorFreeText-editing-cursor:text;
-  --editorInk-editing-cursor:url(images/cursor-editorInk.svg) 0 16, pointer;
-  --editorHighlight-editing-cursor:url(images/cursor-editorTextHighlight.svg) 24 24, text;
-  --editorFreeHighlight-editing-cursor:url(images/cursor-editorFreeHighlight.svg) 1 18, pointer;
+  --editorInk-editing-cursor:url(assets/images/cursor-editorInk.svg) 0 16, pointer;
+  --editorHighlight-editing-cursor:url(assets/images/cursor-editorTextHighlight.svg) 24 24, text;
+  --editorFreeHighlight-editing-cursor:url(assets/images/cursor-editorFreeHighlight.svg) 1 18, pointer;
 
-  --new-alt-text-warning-image:url(images/altText_warning.svg);
+  --new-alt-text-warning-image:url(assets/images/altText_warning.svg);
 }
 
 .textLayer.highlighting{
@@ -3862,7 +3864,7 @@ const String viewerCss = r'''
 
 @media (min-resolution: 1.1dppx){
   :root{
-    --editorFreeText-editing-cursor:url(images/cursor-editorFreeText.svg) 0 16, text;
+    --editorFreeText-editing-cursor:url(assets/images/cursor-editorFreeText.svg) 0 16, text;
   }
 }
 
@@ -3984,10 +3986,10 @@ const String viewerCss = r'''
     }
 
 :is(.annotationEditorLayer :is(.freeTextEditor,.inkEditor,.stampEditor,.highlightEditor,.signatureEditor),.textLayer) .editToolbar{
-    --editor-toolbar-delete-image:url(images/editor-toolbar-delete.svg);
+    --editor-toolbar-delete-image:url(assets/images/editor-toolbar-delete.svg);
     --csstools-light-dark-toggle--107:var(--csstools-color-scheme--light) #2b2a33;
     --editor-toolbar-bg-color:var(--csstools-light-dark-toggle--107, #f0f0f4);
-    --editor-toolbar-highlight-image:url(images/toolbarButton-editorHighlight.svg);
+    --editor-toolbar-highlight-image:url(assets/images/toolbarButton-editorHighlight.svg);
     --csstools-light-dark-toggle--108:var(--csstools-color-scheme--light) #fbfbfe;
     --editor-toolbar-fg-color:var(--csstools-light-dark-toggle--108, #2e2e56);
     --editor-toolbar-border-color:#8f8f9d;
@@ -4183,8 +4185,8 @@ const String viewerCss = r'''
         }
 
 :is(:is(:is(.annotationEditorLayer :is(.freeTextEditor,.inkEditor,.stampEditor,.highlightEditor,.signatureEditor),.textLayer) .editToolbar) .buttons) .altText{
-        --alt-text-add-image:url(images/altText_add.svg);
-        --alt-text-done-image:url(images/altText_done.svg);
+        --alt-text-add-image:url(assets/images/altText_add.svg);
+        --alt-text-done-image:url(assets/images/altText_done.svg);
 
         display:flex;
         align-items:center;
@@ -4678,8 +4680,8 @@ const String viewerCss = r'''
     }
 
 .dialog.newAltText{
-  --new-alt-text-ai-disclaimer-icon:url(images/altText_disclaimer.svg);
-  --new-alt-text-spinner-icon:url(images/altText_spinner.svg);
+  --new-alt-text-ai-disclaimer-icon:url(assets/images/altText_disclaimer.svg);
+  --new-alt-text-spinner-icon:url(assets/images/altText_spinner.svg);
   --csstools-light-dark-toggle--119:var(--csstools-color-scheme--light) #2b2a33;
   --preview-image-bg-color:var(--csstools-light-dark-toggle--119, #f0f0f4);
   --preview-image-border:none;
@@ -5000,7 +5002,7 @@ const String viewerCss = r'''
       }
 
 :is(.annotationEditorLayer .highlightEditor) .editToolbar{
-      --editor-toolbar-colorpicker-arrow-image:url(images/toolbarButton-menuArrow.svg);
+      --editor-toolbar-colorpicker-arrow-image:url(assets/images/toolbarButton-menuArrow.svg);
 
       transform-origin:center !important;
     }
@@ -5605,7 +5607,7 @@ const String viewerCss = r'''
   content:"";
   width:100%;
   height:100%;
-  background:url("images/loading-icon.gif") center no-repeat;
+  background:url("assets/images/loading-icon.gif") center no-repeat;
   display:none;
   transition-property:display;
   transition-delay:var(--loading-icon-delay);
@@ -5730,54 +5732,54 @@ const String viewerCss = r'''
   --csstools-light-dark-toggle--30:var(--csstools-color-scheme--light) rgb(115 115 115);
   --dialog-button-hover-bg-color:var(--csstools-light-dark-toggle--30, rgb(12 12 13 / 0.3));
 
-  --loading-icon:url(images/loading.svg);
-  --treeitem-expanded-icon:url(images/treeitem-expanded.svg);
-  --treeitem-collapsed-icon:url(images/treeitem-collapsed.svg);
-  --toolbarButton-editorComment-icon:url(images/comment-editButton.svg);
-  --toolbarButton-editorFreeText-icon:url(images/toolbarButton-editorFreeText.svg);
-  --toolbarButton-editorHighlight-icon:url(images/toolbarButton-editorHighlight.svg);
-  --toolbarButton-editorInk-icon:url(images/toolbarButton-editorInk.svg);
-  --toolbarButton-editorStamp-icon:url(images/toolbarButton-editorStamp.svg);
-  --toolbarButton-editorSignature-icon:url(images/toolbarButton-editorSignature.svg);
-  --toolbarButton-menuArrow-icon:url(images/toolbarButton-menuArrow.svg);
-  --toolbarButton-sidebarToggle-icon:url(images/toolbarButton-sidebarToggle.svg);
-  --toolbarButton-secondaryToolbarToggle-icon:url(images/toolbarButton-secondaryToolbarToggle.svg);
-  --toolbarButton-pageUp-icon:url(images/toolbarButton-pageUp.svg);
-  --toolbarButton-pageDown-icon:url(images/toolbarButton-pageDown.svg);
-  --toolbarButton-zoomOut-icon:url(images/toolbarButton-zoomOut.svg);
-  --toolbarButton-zoomIn-icon:url(images/toolbarButton-zoomIn.svg);
-  --toolbarButton-presentationMode-icon:url(images/toolbarButton-presentationMode.svg);
-  --toolbarButton-print-icon:url(images/toolbarButton-print.svg);
-  --toolbarButton-openFile-icon:url(images/toolbarButton-openFile.svg);
-  --toolbarButton-download-icon:url(images/toolbarButton-download.svg);
-  --toolbarButton-bookmark-icon:url(images/toolbarButton-bookmark.svg);
-  --toolbarButton-viewThumbnail-icon:url(images/toolbarButton-viewThumbnail.svg);
-  --toolbarButton-viewOutline-icon:url(images/toolbarButton-viewOutline.svg);
-  --toolbarButton-viewAttachments-icon:url(images/toolbarButton-viewAttachments.svg);
-  --toolbarButton-viewLayers-icon:url(images/toolbarButton-viewLayers.svg);
-  --toolbarButton-currentOutlineItem-icon:url(images/toolbarButton-currentOutlineItem.svg);
-  --toolbarButton-search-icon:url(images/toolbarButton-search.svg);
-  --findbarButton-previous-icon:url(images/findbarButton-previous.svg);
-  --findbarButton-next-icon:url(images/findbarButton-next.svg);
-  --secondaryToolbarButton-firstPage-icon:url(images/secondaryToolbarButton-firstPage.svg);
-  --secondaryToolbarButton-lastPage-icon:url(images/secondaryToolbarButton-lastPage.svg);
-  --secondaryToolbarButton-rotateCcw-icon:url(images/secondaryToolbarButton-rotateCcw.svg);
-  --secondaryToolbarButton-rotateCw-icon:url(images/secondaryToolbarButton-rotateCw.svg);
-  --secondaryToolbarButton-selectTool-icon:url(images/secondaryToolbarButton-selectTool.svg);
-  --secondaryToolbarButton-handTool-icon:url(images/secondaryToolbarButton-handTool.svg);
-  --secondaryToolbarButton-scrollPage-icon:url(images/secondaryToolbarButton-scrollPage.svg);
-  --secondaryToolbarButton-scrollVertical-icon:url(images/secondaryToolbarButton-scrollVertical.svg);
-  --secondaryToolbarButton-scrollHorizontal-icon:url(images/secondaryToolbarButton-scrollHorizontal.svg);
-  --secondaryToolbarButton-scrollWrapped-icon:url(images/secondaryToolbarButton-scrollWrapped.svg);
-  --secondaryToolbarButton-spreadNone-icon:url(images/secondaryToolbarButton-spreadNone.svg);
-  --secondaryToolbarButton-spreadOdd-icon:url(images/secondaryToolbarButton-spreadOdd.svg);
-  --secondaryToolbarButton-spreadEven-icon:url(images/secondaryToolbarButton-spreadEven.svg);
+  --loading-icon:url(assets/images/loading.svg);
+  --treeitem-expanded-icon:url(assets/images/treeitem-expanded.svg);
+  --treeitem-collapsed-icon:url(assets/images/treeitem-collapsed.svg);
+  --toolbarButton-editorComment-icon:url(assets/images/comment-editButton.svg);
+  --toolbarButton-editorFreeText-icon:url(assets/images/toolbarButton-editorFreeText.svg);
+  --toolbarButton-editorHighlight-icon:url(assets/images/toolbarButton-editorHighlight.svg);
+  --toolbarButton-editorInk-icon:url(assets/images/toolbarButton-editorInk.svg);
+  --toolbarButton-editorStamp-icon:url(assets/images/toolbarButton-editorStamp.svg);
+  --toolbarButton-editorSignature-icon:url(assets/images/toolbarButton-editorSignature.svg);
+  --toolbarButton-menuArrow-icon:url(assets/images/toolbarButton-menuArrow.svg);
+  --toolbarButton-sidebarToggle-icon:url(assets/images/toolbarButton-sidebarToggle.svg);
+  --toolbarButton-secondaryToolbarToggle-icon:url(assets/images/toolbarButton-secondaryToolbarToggle.svg);
+  --toolbarButton-pageUp-icon:url(assets/images/toolbarButton-pageUp.svg);
+  --toolbarButton-pageDown-icon:url(assets/images/toolbarButton-pageDown.svg);
+  --toolbarButton-zoomOut-icon:url(assets/images/toolbarButton-zoomOut.svg);
+  --toolbarButton-zoomIn-icon:url(assets/images/toolbarButton-zoomIn.svg);
+  --toolbarButton-presentationMode-icon:url(assets/images/toolbarButton-presentationMode.svg);
+  --toolbarButton-print-icon:url(assets/images/toolbarButton-print.svg);
+  --toolbarButton-openFile-icon:url(assets/images/toolbarButton-openFile.svg);
+  --toolbarButton-download-icon:url(assets/images/toolbarButton-download.svg);
+  --toolbarButton-bookmark-icon:url(assets/images/toolbarButton-bookmark.svg);
+  --toolbarButton-viewThumbnail-icon:url(assets/images/toolbarButton-viewThumbnail.svg);
+  --toolbarButton-viewOutline-icon:url(assets/images/toolbarButton-viewOutline.svg);
+  --toolbarButton-viewAttachments-icon:url(assets/images/toolbarButton-viewAttachments.svg);
+  --toolbarButton-viewLayers-icon:url(assets/images/toolbarButton-viewLayers.svg);
+  --toolbarButton-currentOutlineItem-icon:url(assets/images/toolbarButton-currentOutlineItem.svg);
+  --toolbarButton-search-icon:url(assets/images/toolbarButton-search.svg);
+  --findbarButton-previous-icon:url(assets/images/findbarButton-previous.svg);
+  --findbarButton-next-icon:url(assets/images/findbarButton-next.svg);
+  --secondaryToolbarButton-firstPage-icon:url(assets/images/secondaryToolbarButton-firstPage.svg);
+  --secondaryToolbarButton-lastPage-icon:url(assets/images/secondaryToolbarButton-lastPage.svg);
+  --secondaryToolbarButton-rotateCcw-icon:url(assets/images/secondaryToolbarButton-rotateCcw.svg);
+  --secondaryToolbarButton-rotateCw-icon:url(assets/images/secondaryToolbarButton-rotateCw.svg);
+  --secondaryToolbarButton-selectTool-icon:url(assets/images/secondaryToolbarButton-selectTool.svg);
+  --secondaryToolbarButton-handTool-icon:url(assets/images/secondaryToolbarButton-handTool.svg);
+  --secondaryToolbarButton-scrollPage-icon:url(assets/images/secondaryToolbarButton-scrollPage.svg);
+  --secondaryToolbarButton-scrollVertical-icon:url(assets/images/secondaryToolbarButton-scrollVertical.svg);
+  --secondaryToolbarButton-scrollHorizontal-icon:url(assets/images/secondaryToolbarButton-scrollHorizontal.svg);
+  --secondaryToolbarButton-scrollWrapped-icon:url(assets/images/secondaryToolbarButton-scrollWrapped.svg);
+  --secondaryToolbarButton-spreadNone-icon:url(assets/images/secondaryToolbarButton-spreadNone.svg);
+  --secondaryToolbarButton-spreadOdd-icon:url(assets/images/secondaryToolbarButton-spreadOdd.svg);
+  --secondaryToolbarButton-spreadEven-icon:url(assets/images/secondaryToolbarButton-spreadEven.svg);
   --secondaryToolbarButton-imageAltTextSettings-icon:var(
     --toolbarButton-editorStamp-icon
   );
-  --secondaryToolbarButton-documentProperties-icon:url(images/secondaryToolbarButton-documentProperties.svg);
-  --editorParams-stampAddImage-icon:url(images/toolbarButton-zoomIn.svg);
-  --comment-edit-button-icon:url(images/comment-editButton.svg);
+  --secondaryToolbarButton-documentProperties-icon:url(assets/images/secondaryToolbarButton-documentProperties.svg);
+  --editorParams-stampAddImage-icon:url(assets/images/toolbarButton-zoomIn.svg);
+  --comment-edit-button-icon:url(assets/images/comment-editButton.svg);
 }
 
 @supports (color: light-dark(red, red)) and (color: rgb(0 0 0 / 0)){
@@ -7478,6 +7480,5 @@ dialog :link{
     display:none;
   }
 }
-
 
 ''';
