@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18.1)
 
-project("pdfreader")
+project("pdf_renderer")
 
 # MuPDF source files
 set(MUPDF_SRC
@@ -53,7 +53,7 @@ target_include_directories(mupdf PRIVATE
     ${CMAKE_SOURCE_DIR}/mupdf/source/pdf
 )
 
-# Main native library
+# Main native library - BU .so'yu oluşturacak
 add_library(
     pdf_renderer
     SHARED
