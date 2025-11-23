@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
 
 void main() => runApp(const PDFReaderApp());
 
@@ -279,18 +279,49 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
   }
 }
 
-class PDFViewerScreen extends StatelessWidget {
+class PDFViewerScreen extends StatefulWidget {
   final PDFDocument document;
 
   const PDFViewerScreen({super.key, required this.document});
 
   @override
+  State<PDFViewerScreen> createState() => _PDFViewerScreenState();
+}
+
+class _PDFViewerScreenState extends State<PDFViewerScreen> {
+  PDFDocument? _pdfDocument;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPDF();
+  }
+
+  Future<void> _loadPDF() async {
+    try {
+      final document = await PDFDocument.fromFile(File(widget.document.path));
+      setState(() {
+        _pdfDocument = document;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      print('PDF yükleme hatası: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(document.name),
+        title: Text(widget.document.name),
       ),
-      body: SfPdfViewer.file(File(document.path)),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _pdfDocument != null
+              ? PDFViewer(document: _pdfDocument!)
+              : const Center(child: Text('PDF yüklenemedi')),
     );
   }
 }
