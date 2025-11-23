@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   file_picker: ^10.3.7
-  advance_pdf_viewer: ^2.0.0  # YENİ EKLENDİ
+  pdfx: ^1.1.2  # YENİ EKLENDİ - advance_pdf_viewer yerine
 
 dev_dependencies:
   flutter_test:
