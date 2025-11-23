@@ -291,6 +291,10 @@ class PDFViewerScreen extends StatefulWidget {
 class _PDFViewerScreenState extends State<PDFViewerScreen> {
   late PdfController _pdfController;
   bool _isLoading = true;
+  final TextEditingController _textSearchController = TextEditingController();
+  bool _isTextSearching = false;
+  List<PdfTextMatch> _searchResults = [];
+  int _currentSearchIndex = 0;
 
   @override
   void initState() {
@@ -313,9 +317,76 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     }
   }
 
+  Future<void> _searchText(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _isTextSearching = false;
+        _searchResults.clear();
+        _currentSearchIndex = 0;
+      });
+      return;
+    }
+
+    try {
+      final results = await _pdfController.searchText(
+        query,
+        // Tüm sayfalarda ara
+        fromPage: 1,
+        toPage: _pdfController.pagesCount,
+      );
+      
+      setState(() {
+        _searchResults = results;
+        _isTextSearching = true;
+        _currentSearchIndex = 0;
+      });
+
+      if (_searchResults.isNotEmpty) {
+        _jumpToSearchResult(_currentSearchIndex);
+      }
+    } catch (e) {
+      print('Arama hatası: $e');
+    }
+  }
+
+  void _jumpToSearchResult(int index) {
+    if (_searchResults.isEmpty) return;
+    
+    final result = _searchResults[index];
+    _pdfController.jumpToPage(result.pageNumber);
+    
+    setState(() {
+      _currentSearchIndex = index;
+    });
+  }
+
+  void _nextSearchResult() {
+    if (_searchResults.isEmpty) return;
+    
+    final nextIndex = (_currentSearchIndex + 1) % _searchResults.length;
+    _jumpToSearchResult(nextIndex);
+  }
+
+  void _previousSearchResult() {
+    if (_searchResults.isEmpty) return;
+    
+    final prevIndex = (_currentSearchIndex - 1) % _searchResults.length;
+    _jumpToSearchResult(prevIndex);
+  }
+
+  void _clearTextSearch() {
+    _textSearchController.clear();
+    setState(() {
+      _isTextSearching = false;
+      _searchResults.clear();
+      _currentSearchIndex = 0;
+    });
+  }
+
   @override
   void dispose() {
     _pdfController.dispose();
+    _textSearchController.dispose();
     super.dispose();
   }
 
@@ -339,6 +410,42 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
       appBar: AppBar(
         title: Text(widget.document.name),
         actions: [
+          // Metin Arama Butonu
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('PDF İçinde Ara'),
+                  content: TextField(
+                    controller: _textSearchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Aranacak metni yazın...',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: _searchText,
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _clearTextSearch();
+                      },
+                      child: const Text('İptal'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _searchText(_textSearchController.text);
+                      },
+                      child: const Text('Ara'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _previousPage,
@@ -360,16 +467,92 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : PdfView(
-              controller: _pdfController,
-              // builders: PdfViewBuilders(  // BU SATIRI KALDIR - gerek yok
-              //   pageBuilder: (context, pageImage, index, document) {
-              //     return Image.memory(pageImage.bytes);
-              //   },
-              // ),
+      body: Column(
+        children: [
+          // Arama Sonuçları Gösterimi
+          if (_isTextSearching && _searchResults.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(8),
+              color: Colors.blue[50],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${_currentSearchIndex + 1}/${_searchResults.length} sonuç',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios, size: 16),
+                        onPressed: _previousSearchResult,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onPressed: _nextSearchResult,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        onPressed: _clearTextSearch,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
+          // PDF Görüntüleyici
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : PdfView(
+                    controller: _pdfController,
+                    scrollDirection: Axis.vertical, // DİKEY KAYDIRMA
+                    physics: const BouncingScrollPhysics(), // Daha iyi scroll
+                  ),
+          ),
+        ],
+      ),
+      // Alt Navigasyon Bar
+      bottomNavigationBar: BottomAppBar(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Sayfa Navigasyonu
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios),
+                    onPressed: _previousPage,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward_ios),
+                    onPressed: _nextPage,
+                  ),
+                ],
+              ),
+              // Yakınlaştırma Kontrolleri
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.zoom_out),
+                    onPressed: () {
+                      // Yakınlaştırma kontrolü (PDFx otomatik yönetiyor)
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.zoom_in),
+                    onPressed: () {
+                      // Yakınlaştırma kontrolü
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
