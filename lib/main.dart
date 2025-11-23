@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:path_provider/path_provider.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 void main() => runApp(const PDFReaderApp());
 
@@ -100,39 +99,13 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
     }
   }
 
-  void _openPDF(PDFDocument document) async {
-    try {
-      final file = File(document.path);
-      if (await file.exists()) {
-        // FileProvider ile güvenli URI oluştur
-        final tempDir = await getTemporaryDirectory();
-        final tempFile = await _copyToTemp(file, tempDir);
-        
-        // content:// URI oluştur (FileProvider sayesinde)
-        final uri = Uri.file(tempFile.path);
-        
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(
-            uri,
-            mode: LaunchMode.externalApplication,
-          );
-        } else {
-          _showSnackBar('PDF görüntüleyici bulunamadı', Colors.orange);
-        }
-      } else {
-        _showSnackBar('PDF dosyası bulunamadı', Colors.red);
-      }
-    } catch (e) {
-      _showSnackBar('PDF açılamadı: $e', Colors.red);
-    }
-  }
-
-  Future<File> _copyToTemp(File originalFile, Directory tempDir) async {
-    final tempFile = File('${tempDir.path}/${originalFile.uri.pathSegments.last}');
-    if (await tempFile.exists()) {
-      await tempFile.delete();
-    }
-    return await originalFile.copy(tempFile.path);
+  void _openPDF(PDFDocument document) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PDFViewerScreen(document: document),
+      ),
+    );
   }
 
   void _showSnackBar(String message, Color color) {
@@ -302,6 +275,22 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+class PDFViewerScreen extends StatelessWidget {
+  final PDFDocument document;
+
+  const PDFViewerScreen({super.key, required this.document});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(document.name),
+      ),
+      body: SfPdfViewer.file(File(document.path)),
     );
   }
 }
