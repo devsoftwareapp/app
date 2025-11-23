@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
+import 'package:pdfx/pdfx.dart';
 
 void main() => runApp(const PDFReaderApp());
 
@@ -289,7 +289,7 @@ class PDFViewerScreen extends StatefulWidget {
 }
 
 class _PDFViewerScreenState extends State<PDFViewerScreen> {
-  PDFDocument? _pdfDocument;
+  late PdfController _pdfController;
   bool _isLoading = true;
 
   @override
@@ -300,9 +300,11 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
 
   Future<void> _loadPDF() async {
     try {
-      final document = await PDFDocument.fromFile(File(widget.document.path));
+      final controller = PdfController(
+        document: PdfDocument.openFile(widget.document.path),
+      );
       setState(() {
-        _pdfDocument = document;
+        _pdfController = controller;
         _isLoading = false;
       });
     } catch (e) {
@@ -312,16 +314,62 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
   }
 
   @override
+  void dispose() {
+    _pdfController.dispose();
+    super.dispose();
+  }
+
+  void _nextPage() {
+    _pdfController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeIn,
+    );
+  }
+
+  void _previousPage() {
+    _pdfController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.document.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _previousPage,
+          ),
+          PdfPageNumber(
+            controller: _pdfController,
+            builder: (_, state, loadingState, pagesCount) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              child: Text(
+                '${_pdfController.page} / ${pagesCount ?? 0}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.arrow_forward),
+            onPressed: _nextPage,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _pdfDocument != null
-              ? PDFViewer(document: _pdfDocument!)
-              : const Center(child: Text('PDF yüklenemedi')),
+          : PdfView(
+              controller: _pdfController,
+              builders: PdfViewBuilders(
+                pageBuilder: (context, pageImage, index, document) {
+                  return Image.memory(pageImage.bytes);
+                },
+              ),
+            ),
     );
   }
 }
