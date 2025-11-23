@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'dart:math';
 import 'package:pdfx/pdfx.dart';
+import 'package:flutter_pdf_text/flutter_pdf_text.dart';
 
 void main() => runApp(const PDFReaderApp());
 
@@ -293,13 +294,15 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
   bool _isLoading = true;
   final TextEditingController _textSearchController = TextEditingController();
   bool _isTextSearching = false;
-  List<PdfTextMatch> _searchResults = [];
+  List<TextSearchResult> _searchResults = [];
   int _currentSearchIndex = 0;
+  PDFDoc? _pdfDoc;
 
   @override
   void initState() {
     super.initState();
     _loadPDF();
+    _loadPDFText();
   }
 
   Future<void> _loadPDF() async {
@@ -317,8 +320,17 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     }
   }
 
+  Future<void> _loadPDFText() async {
+    try {
+      _pdfDoc = await PDFDoc.fromFile(File(widget.document.path));
+      print('PDF text yüklendi: ${_pdfDoc!.length} sayfa');
+    } catch (e) {
+      print('PDF text yükleme hatası: $e');
+    }
+  }
+
   Future<void> _searchText(String query) async {
-    if (query.isEmpty) {
+    if (query.isEmpty || _pdfDoc == null) {
       setState(() {
         _isTextSearching = false;
         _searchResults.clear();
@@ -328,24 +340,43 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     }
 
     try {
-      final results = await _pdfController.searchText(
-        query,
-        // Tüm sayfalarda ara
-        fromPage: 1,
-        toPage: _pdfController.pagesCount,
-      );
+      setState(() => _isLoading = true);
+      
+      final results = <TextSearchResult>[];
+      final searchQuery = query.toLowerCase();
+      
+      // Tüm sayfalarda arama yap
+      for (int pageNum = 1; pageNum <= _pdfDoc!.length; pageNum++) {
+        try {
+          final pageText = await _pdfDoc!.pageAt(pageNum).text;
+          if (pageText.toLowerCase().contains(searchQuery)) {
+            results.add(TextSearchResult(
+              pageNumber: pageNum,
+              text: pageText,
+            ));
+          }
+        } catch (e) {
+          print('Sayfa $pageNum okunamadı: $e');
+        }
+      }
       
       setState(() {
         _searchResults = results;
         _isTextSearching = true;
         _currentSearchIndex = 0;
+        _isLoading = false;
       });
 
       if (_searchResults.isNotEmpty) {
         _jumpToSearchResult(_currentSearchIndex);
+        _showSnackBar('${results.length} sonuç bulundu', Colors.green);
+      } else {
+        _showSnackBar('Arama sonucu bulunamadı', Colors.orange);
       }
     } catch (e) {
+      setState(() => _isLoading = false);
       print('Arama hatası: $e');
+      _showSnackBar('Arama yapılamadı', Colors.red);
     }
   }
 
@@ -358,6 +389,8 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     setState(() {
       _currentSearchIndex = index;
     });
+    
+    _showSnackBar('Sayfa ${result.pageNumber} bulundu', Colors.blue);
   }
 
   void _nextSearchResult() {
@@ -381,6 +414,16 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
       _searchResults.clear();
       _currentSearchIndex = 0;
     });
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -418,13 +461,23 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('PDF İçinde Ara'),
-                  content: TextField(
-                    controller: _textSearchController,
-                    decoration: const InputDecoration(
-                      hintText: 'Aranacak metni yazın...',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: _searchText,
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: _textSearchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Aranacak metni yazın...',
+                          border: OutlineInputBorder(),
+                        ),
+                        autofocus: true,
+                      ),
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: LinearProgressIndicator(),
+                        ),
+                    ],
                   ),
                   actions: [
                     TextButton(
@@ -478,7 +531,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${_currentSearchIndex + 1}/${_searchResults.length} sonuç',
+                    '${_currentSearchIndex + 1}/${_searchResults.length} sonuç - Sayfa ${_searchResults[_currentSearchIndex].pageNumber}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Row(
@@ -506,52 +559,11 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : PdfView(
                     controller: _pdfController,
-                    scrollDirection: Axis.vertical, // DİKEY KAYDIRMA
-                    physics: const BouncingScrollPhysics(), // Daha iyi scroll
+                    scrollDirection: Axis.vertical,
+                    physics: const BouncingScrollPhysics(),
                   ),
           ),
         ],
-      ),
-      // Alt Navigasyon Bar
-      bottomNavigationBar: BottomAppBar(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Sayfa Navigasyonu
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios),
-                    onPressed: _previousPage,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward_ios),
-                    onPressed: _nextPage,
-                  ),
-                ],
-              ),
-              // Yakınlaştırma Kontrolleri
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.zoom_out),
-                    onPressed: () {
-                      // Yakınlaştırma kontrolü (PDFx otomatik yönetiyor)
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.zoom_in),
-                    onPressed: () {
-                      // Yakınlaştırma kontrolü
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -568,5 +580,15 @@ class PDFDocument {
     required this.path,
     required this.dateAdded,
     required this.fileSize,
+  });
+}
+
+class TextSearchResult {
+  final int pageNumber;
+  final String text;
+
+  TextSearchResult({
+    required this.pageNumber,
+    required this.text,
   });
 }
