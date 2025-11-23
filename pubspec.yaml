@@ -10,7 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   file_picker: ^10.3.7
-  pdfx: ^2.9.2  # YENİ VERSİYON
+  pdfx: ^2.9.2
+  flutter_pdf_text: ^0.9.0  # YENİ - PDF text extraction
 
 dev_dependencies:
   flutter_test:
