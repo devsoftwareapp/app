@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:pdfx/pdfx.dart';
-import 'package:flutter_pdf_text/flutter_pdf_text.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() => runApp(const PDFReaderApp());
 
@@ -100,13 +100,61 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
     }
   }
 
-  void _openPDF(PDFDocument document) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PDFViewerScreen(document: document),
-      ),
-    );
+  Future<void> _openPDF(PDFDocument document) async {
+    try {
+      final file = File(document.path);
+      if (await file.exists()) {
+        // FileProvider ile güvenli URI oluştur
+        await _openWithGooglePDFViewer(document.path);
+      } else {
+        _showSnackBar('PDF dosyası bulunamadı', Colors.red);
+      }
+    } catch (e) {
+      _showSnackBar('PDF açılamadı: $e', Colors.red);
+    }
+  }
+
+  Future<void> _openWithGooglePDFViewer(String filePath) async {
+    try {
+      final file = File(filePath);
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = await _copyToTemp(file, tempDir);
+      
+      // Google PDF Viewer Intent'i oluştur
+      final uri = Uri.file(tempFile.path);
+      
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        // Google PDF Viewer yoksa, varsayılan PDF viewer'ı dene
+        _openWithDefaultPDFViewer(tempFile.path);
+      }
+    } catch (e) {
+      _showSnackBar('PDF açılamadı: $e', Colors.red);
+    }
+  }
+
+  Future<void> _openWithDefaultPDFViewer(String filePath) async {
+    try {
+      final uri = Uri.file(filePath);
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      _showSnackBar('PDF görüntüleyici bulunamadı', Colors.orange);
+    }
+  }
+
+  Future<File> _copyToTemp(File originalFile, Directory tempDir) async {
+    final tempFile = File('${tempDir.path}/${originalFile.uri.pathSegments.last}');
+    if (await tempFile.exists()) {
+      await tempFile.delete();
+    }
+    return await originalFile.copy(tempFile.path);
   }
 
   void _showSnackBar(String message, Color color) {
@@ -280,295 +328,6 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
   }
 }
 
-class PDFViewerScreen extends StatefulWidget {
-  final PDFDocument document;
-
-  const PDFViewerScreen({super.key, required this.document});
-
-  @override
-  State<PDFViewerScreen> createState() => _PDFViewerScreenState();
-}
-
-class _PDFViewerScreenState extends State<PDFViewerScreen> {
-  late PdfController _pdfController;
-  bool _isLoading = true;
-  final TextEditingController _textSearchController = TextEditingController();
-  bool _isTextSearching = false;
-  List<TextSearchResult> _searchResults = [];
-  int _currentSearchIndex = 0;
-  PDFDoc? _pdfDoc;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPDF();
-    _loadPDFText();
-  }
-
-  Future<void> _loadPDF() async {
-    try {
-      final controller = PdfController(
-        document: PdfDocument.openFile(widget.document.path),
-      );
-      setState(() {
-        _pdfController = controller;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      print('PDF yükleme hatası: $e');
-    }
-  }
-
-  Future<void> _loadPDFText() async {
-    try {
-      _pdfDoc = await PDFDoc.fromFile(File(widget.document.path));
-      print('PDF text yüklendi: ${_pdfDoc!.length} sayfa');
-    } catch (e) {
-      print('PDF text yükleme hatası: $e');
-    }
-  }
-
-  Future<void> _searchText(String query) async {
-    if (query.isEmpty || _pdfDoc == null) {
-      setState(() {
-        _isTextSearching = false;
-        _searchResults.clear();
-        _currentSearchIndex = 0;
-      });
-      return;
-    }
-
-    try {
-      setState(() => _isLoading = true);
-      
-      final results = <TextSearchResult>[];
-      final searchQuery = query.toLowerCase();
-      
-      // Tüm sayfalarda arama yap
-      for (int pageNum = 1; pageNum <= _pdfDoc!.length; pageNum++) {
-        try {
-          final pageText = await _pdfDoc!.pageAt(pageNum).text;
-          if (pageText.toLowerCase().contains(searchQuery)) {
-            results.add(TextSearchResult(
-              pageNumber: pageNum,
-              text: pageText,
-            ));
-          }
-        } catch (e) {
-          print('Sayfa $pageNum okunamadı: $e');
-        }
-      }
-      
-      setState(() {
-        _searchResults = results;
-        _isTextSearching = true;
-        _currentSearchIndex = 0;
-        _isLoading = false;
-      });
-
-      if (_searchResults.isNotEmpty) {
-        _jumpToSearchResult(_currentSearchIndex);
-        _showSnackBar('${results.length} sonuç bulundu', Colors.green);
-      } else {
-        _showSnackBar('Arama sonucu bulunamadı', Colors.orange);
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      print('Arama hatası: $e');
-      _showSnackBar('Arama yapılamadı', Colors.red);
-    }
-  }
-
-  void _jumpToSearchResult(int index) {
-    if (_searchResults.isEmpty) return;
-    
-    final result = _searchResults[index];
-    _pdfController.jumpToPage(result.pageNumber);
-    
-    setState(() {
-      _currentSearchIndex = index;
-    });
-    
-    _showSnackBar('Sayfa ${result.pageNumber} bulundu', Colors.blue);
-  }
-
-  void _nextSearchResult() {
-    if (_searchResults.isEmpty) return;
-    
-    final nextIndex = (_currentSearchIndex + 1) % _searchResults.length;
-    _jumpToSearchResult(nextIndex);
-  }
-
-  void _previousSearchResult() {
-    if (_searchResults.isEmpty) return;
-    
-    final prevIndex = (_currentSearchIndex - 1) % _searchResults.length;
-    _jumpToSearchResult(prevIndex);
-  }
-
-  void _clearTextSearch() {
-    _textSearchController.clear();
-    setState(() {
-      _isTextSearching = false;
-      _searchResults.clear();
-      _currentSearchIndex = 0;
-    });
-  }
-
-  void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pdfController.dispose();
-    _textSearchController.dispose();
-    super.dispose();
-  }
-
-  void _nextPage() {
-    _pdfController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeIn,
-    );
-  }
-
-  void _previousPage() {
-    _pdfController.previousPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.document.name),
-        actions: [
-          // Metin Arama Butonu
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('PDF İçinde Ara'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: _textSearchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Aranacak metni yazın...',
-                          border: OutlineInputBorder(),
-                        ),
-                        autofocus: true,
-                      ),
-                      if (_isLoading)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: LinearProgressIndicator(),
-                        ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _clearTextSearch();
-                      },
-                      child: const Text('İptal'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _searchText(_textSearchController.text);
-                      },
-                      child: const Text('Ara'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _previousPage,
-          ),
-          PdfPageNumber(
-            controller: _pdfController,
-            builder: (_, state, loadingState, pagesCount) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
-              child: Text(
-                '${_pdfController.page} / ${pagesCount ?? 0}',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_forward),
-            onPressed: _nextPage,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Arama Sonuçları Gösterimi
-          if (_isTextSearching && _searchResults.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(8),
-              color: Colors.blue[50],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${_currentSearchIndex + 1}/${_searchResults.length} sonuç - Sayfa ${_searchResults[_currentSearchIndex].pageNumber}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios, size: 16),
-                        onPressed: _previousSearchResult,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onPressed: _nextSearchResult,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 16),
-                        onPressed: _clearTextSearch,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          // PDF Görüntüleyici
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : PdfView(
-                    controller: _pdfController,
-                    scrollDirection: Axis.vertical,
-                    physics: const BouncingScrollPhysics(),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class PDFDocument {
   final String name;
   final String path;
@@ -580,15 +339,5 @@ class PDFDocument {
     required this.path,
     required this.dateAdded,
     required this.fileSize,
-  });
-}
-
-class TextSearchResult {
-  final int pageNumber;
-  final String text;
-
-  TextSearchResult({
-    required this.pageNumber,
-    required this.text,
   });
 }
