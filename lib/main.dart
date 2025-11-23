@@ -108,10 +108,14 @@ class _PDFLibraryScreenState extends State<PDFLibraryScreen> {
         final tempDir = await getTemporaryDirectory();
         final tempFile = await _copyToTemp(file, tempDir);
         
+        // content:// URI oluştur (FileProvider sayesinde)
         final uri = Uri.file(tempFile.path);
         
         if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
+          await launchUrl(
+            uri,
+            mode: LaunchMode.externalApplication,
+          );
         } else {
           _showSnackBar('PDF görüntüleyici bulunamadı', Colors.orange);
         }
