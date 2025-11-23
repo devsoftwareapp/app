@@ -364,11 +364,11 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
           ? const Center(child: CircularProgressIndicator())
           : PdfView(
               controller: _pdfController,
-              builders: PdfViewBuilders(
-                pageBuilder: (context, pageImage, index, document) {
-                  return Image.memory(pageImage.bytes);
-                },
-              ),
+              // builders: PdfViewBuilders(  // BU SATIRI KALDIR - gerek yok
+              //   pageBuilder: (context, pageImage, index, document) {
+              //     return Image.memory(pageImage.bytes);
+              //   },
+              // ),
             ),
     );
   }
